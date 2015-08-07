@@ -1,0 +1,20 @@
+{
+    "compilerOptions": {
+        "module": "commonjs",
+        "declaration": false,
+        "noImplicitAny": true,
+        "removeComments": true,
+        "preserveConstEnums": true,
+        "outDir": "../lib/",
+        "out": "../lib/-flux.js",
+        "sourceMap": true
+    },
+    "buildOnSave": true,
+    "compileOnSave": true,
+    "filesGlob": [
+        "./**/*.ts"
+    ],
+    "files": [
+        "./h5-flux.ts"
+    ]
+}

@@ -1,0 +1,21 @@
+{
+    "compilerOptions": {
+        "module": "commonjs",
+        "noImplicitAny": true,
+        "removeComments": true,
+        "preserveConstEnums": true,
+        "out": "./bin/todo.js",
+        "sourceMap": true
+    },
+    "filesGlob": [
+        "../../lib/*.ts",
+        "./**/*.ts"
+    ],
+    "files": [
+        "../../lib/h5-flux.d.ts",
+        "./events/todo_item.ts",
+        "./events/todo_list.ts",
+        "./stores/todo_item.ts",
+        "./stores/todo_list.ts"
+    ]
+}

@@ -1,0 +1,18 @@
+{
+    "compilerOptions": {
+        "module": "commonjs",
+        "noImplicitAny": true,
+        "removeComments": true,
+        "preserveConstEnums": true,
+        "sourceMap": true
+    },
+    "filesGlob": [
+        "../lib/*.ts",
+        "./**/*.ts"
+    ],
+    "files": [
+        "../lib/h5-flux.d.ts",
+        "./h5-event.ts",
+        "./h5-store.ts"
+    ]
+}

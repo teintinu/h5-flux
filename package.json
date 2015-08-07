@@ -1,0 +1,30 @@
+{
+  "name": "h5-flux",
+  "version": "0.0.0",
+  "description": "",
+  "main": "lib/h5-flux.js",
+  "directories": {
+    "example": "examples",
+    "test": "test"
+  },
+  "dependencies": {
+    "chai": "^3.2.0"
+  },
+  "devDependencies": {
+    "chai": "^3.2.0",
+    "mocha": "^2.2.5"
+  },
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/thr0w/h5-flux.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/thr0w/h5-flux/issues"
+  },
+  "homepage": "https://github.com/thr0w/h5-flux"
+}
