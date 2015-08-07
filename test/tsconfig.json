@@ -8,10 +8,15 @@
     },
     "filesGlob": [
         "../lib/*.ts",
+        "../examples/**/*.ts",
         "./**/*.ts"
     ],
     "files": [
         "../lib/h5-flux.d.ts",
+        "../examples/todo/data/todoitem.ts",
+        "../examples/todo/events/todoitem.ts",
+        "../examples/todo/stores/todoitem.ts",
+        "../examples/todo/stores/todolist.ts",
         "./h5-event.ts",
         "./h5-store.ts"
     ]

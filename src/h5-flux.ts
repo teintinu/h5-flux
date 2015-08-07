@@ -1,17 +1,35 @@
 
+var activeEvents = 0;
+var activeStores = 0;
+
+export function getCurrentStoreCount() {
+    return {
+        activeEvents,
+        activeStores
+    }
+}
+
 // TODO PAYLOAD must be immutable
 
-export interface EventEmmiter<KEY, PAYLOAD> {
-    emit(key: KEY, payload: PAYLOAD): void
-};
+export type EventEmmiter<KEY, PAYLOAD> = (key: KEY, payload: PAYLOAD) => void;
 
-export declare type EventListenner<PAYLOAD> = (payload: PAYLOAD) => void;
+export type EventListenner<PAYLOAD> = (payload: PAYLOAD) => void;
+export type EventToggle<KEY, PAYLOAD> = (key: KEY, callback: EventListenner<PAYLOAD>) => void;
+
+export type EventRefEmmiter<KEY, PAYLOAD> = { emit: EventEmmiter<KEY, PAYLOAD> };
+export type EventRefListenner<KEY, PAYLOAD> = {
+    on: EventToggle<KEY, PAYLOAD>,
+    off: EventToggle<KEY, PAYLOAD>,
+    callback: EventListenner<PAYLOAD>
+};
 
 export interface Event<KEY, PAYLOAD> {
     name: string;
-    emitter: EventEmmiter<KEY, PAYLOAD>;
-    on(key: KEY, callback: EventListenner<PAYLOAD>): void;
-    off(key: KEY, callback: EventListenner<PAYLOAD>): void;
+    emit: EventEmmiter<KEY, PAYLOAD>;
+    on: EventToggle<KEY, PAYLOAD>;
+    off: EventToggle<KEY, PAYLOAD>;
+    refEmitter: () => EventRefEmmiter<KEY, PAYLOAD>;
+    refListenner: (callback: EventListenner<PAYLOAD>) => EventRefListenner<KEY, PAYLOAD>;
 }
 
 export function asap(fn: () => void) {
@@ -26,19 +44,28 @@ export function createEvent<KEY, PAYLOAD>(name: string): Event<KEY, PAYLOAD> {
 
     let all_listenners: any = {};
 
-    let emitter: EventEmmiter<KEY, PAYLOAD> = {
-        emit: function emitter(key: KEY, payload: PAYLOAD) {
-            asap(() => {
-                var listenners = getListenners(key, false);
-                if (listenners) {
-                    if (typeof payload === 'object')
-                        payload = Object.freeze<PAYLOAD>(payload);
-                    listenners.forEach((listenner) =>
-                        asap(() => listenner(payload))
-                    )
-                }
-            });
-        }
+    var event = {
+        name,
+        emit,
+        on,
+        off,
+        refEmitter,
+        refListenner
+    }
+
+    return event;
+
+    function emit(key: KEY, payload: PAYLOAD) {
+        asap(() => {
+            var listenners = getListenners(key, false);
+            if (listenners) {
+                if (typeof payload === 'object')
+                    payload = Object.freeze<PAYLOAD>(payload);
+                listenners.forEach((listenner) =>
+                    asap(() => listenner(payload))
+                )
+            }
+        });
     };
 
     function on(key: KEY, callback: EventListenner<PAYLOAD>) {
@@ -54,6 +81,7 @@ export function createEvent<KEY, PAYLOAD>(name: string): Event<KEY, PAYLOAD> {
             if (i != -1) {
                 listenners.splice(i, 1);
                 if (!listenners.length) {
+                    activeEvents--;
                     delete all_listenners[<any>key];
                 }
             }
@@ -64,95 +92,157 @@ export function createEvent<KEY, PAYLOAD>(name: string): Event<KEY, PAYLOAD> {
         var l = all_listenners[<any>key];
         if (!l && canCreate) {
             l = all_listenners[<any>key] = [];
+            activeEvents++;
         }
         return <EventListenner<PAYLOAD>[]> l;
     }
 
-    return {
-        name,
-        emitter,
-        on,
-        off
-    }
+    function refEmitter(): EventRefEmmiter<KEY, PAYLOAD> {
+        return { emit }
+    };
+
+    function refListenner(callback: EventListenner<PAYLOAD>) {
+        return { on, off, callback };
+    };
+
 }
 
-export interface Store<KEY, DATA, SCHEMA, EVENTEMITERS, EVENTLISTENNERS> {
-    name: string;
-    refCount: (key: KEY) => number,
-    addRef: (key: KEY) => StoreInstance<KEY, DATA, SCHEMA, EVENTEMITERS, EVENTLISTENNERS>,
-    releaseRef: (key: KEY) => void;
-}
+export function createStore<KEY, INSTANCE>(empty: KEY, instance: INSTANCE) {
 
-export interface StoreInstance<KEY, DATA, SCHEMA, EVENTEMITERS, EVENTLISTENNERS> {
-    key: KEY,
-    schema: SCHEMA;
-    emitters: EVENTEMITERS,
-    listenners: EVENTLISTENNERS
-}
+    type Finder = (key: KEY, callback: (err: Error, data: any) => void) => void;
+    type InternalInstance = { refCount: number, data: any, emit: any, listen: any };
 
-export function createStore<KEY, DATA, SCHEMA, EVENTEMITERS, EVENTLISTENNERS>(name: string, newData: ()=>DATA, schema: SCHEMA, emitters: EVENTEMITERS, listenners: EVENTLISTENNERS): Store<KEY, DATA, SCHEMA, EVENTEMITERS, EVENTLISTENNERS> {
+    let finder = <Finder>((<any>instance).finder);
+    let schema: any = (<any>instance).schema;
+    let emit: any = (<any>instance).emit;
+    let listen: any = (<any>instance).listen;
 
-    type Instance = StoreInstance<KEY, DATA, SCHEMA, EVENTEMITERS, EVENTLISTENNERS>;
+    checkStoreInstance();
+
     var instances: any = {};
 
     return {
-        name,
         refCount,
-        addRef,
-        releaseRef
+        addRef
     };
 
     function refCount(key: KEY) {
-        var instance = instances[<any>key];
+        var instance = <InternalInstance>instances[<any>key];
         if (instance) {
+            if (instance.refCount < 1)
+                return -1;
             return instance.refCount;
         }
         return 0;
     }
 
-    function addRef(key: KEY) {
-        var instance = instances[<any>key];
+    function addRef(key: KEY): INSTANCE {
+        if (typeof key === "Object")
+            key = Object.freeze<KEY>(key);
+        var instance = <InternalInstance>(instances[<any>key]);
         if (!instance) {
-            instances[<any>key] = instance = newInstance();
+            activeStores++;
+            instance = createInstance();
+            instances[<any>key] = instance;
         }
-        return <Instance>(instance.obj);
+        return createRef(instance);
+
+        function createInstance() {
+
+            var instance: InternalInstance = {
+                refCount: 0,
+                data: undefined,
+                emit: createEmitters(),
+                listen: createListenners()
+            }
+
+            return instance;
+
+            function createEmitters() {
+                var keys = Object.keys(emit);
+                var emitters: any = {};
+                for (var i = 0; i < keys.length; i++) {
+                    var k = keys[i];
+                    var refEmit = <EventRefEmmiter<KEY,any>>emit[k];
+                    emitters[k] = () => refEmit.emit(key, instance.data);
+                }
+                return emitters;
+            }
+
+            function createListenners() {
+                var keys = Object.keys(listen);
+                var listenners: any = {};
+                for (var i = 0; i < keys.length; i++) {
+                    var k = keys[i];
+                    var {on, off, callback} = <EventRefListenner<KEY,any>>listen[k];
+                    on(key, callback);
+                    listenners[k] = () => off(key, callback);
+                }
+                return listenners;
+            }
+        }
+
+        function destroyInstance() {
+            var listen = instances[<any>key].listen;
+            delete instances[<any>key];
+            var keys = Object.keys(listen);
+            for (var i = 0; i < keys.length; i++) {
+                var off = listen[keys[i]];
+                off();
+            }
+            activeStores--;
+        }
+
+        function createRef(instance: InternalInstance): INSTANCE {
+            var active = true;
+            instance.refCount++;
+            return <INSTANCE><any>{
+                key,
+                data: () => instance.data,
+                finder: finder,
+                schema: schema,
+                emit: instance.emit,
+                listen: instance.listen,
+                releaseRef: () => {
+                    if (active) {
+                        if (instance.refCount <= 1) {
+                            destroyInstance();
+                        }
+                        else
+                            instance.refCount--;
+                        active = false;
+                    }
+                }
+            };
+        }
     }
 
-    function releaseRef(key: KEY) {
-        var instance = instances[<any>key];
-        if (instance) {
-            if (instance.refCount <= 1)
-                delete instances[<any>key];
-            else
-                instance.refCount--;
-        }
-    }
-
-    function newInstance() {
-        return {
-            name,
-            schema,
-            emitters,
-            listenners,
-            data: newData()
-        }
+    function checkStoreInstance() {
+        // TODO
     }
 }
 
 export type I18N = string;
 export type Validation<T> = (value: T) => I18N;
 export enum FieldType { String, Number };
+export interface FieldLabels {
+    caption: I18N,
+    hint: I18N
+}
+
 export interface Field<T> {
     name: string;
+    labels: FieldLabels,
     toText(value: T): string;
     fromText(text: string): T;
     validate(value: T): I18N;
     required: boolean
 }
 
-export function createField<T>(name: string, fieldType: FieldType, toText: (value: T) => string, fromText: (text: string) => T, required: boolean, validations?: Validation<T>[]): Field<T> {
+export function createField<T>(name: string, labels: FieldLabels, fieldType: FieldType, toText: (value: T) => string, fromText: (text: string) => T, required: boolean, validations?: Validation<T>[]): Field<T> {
     return {
         name,
+        labels,
         toText,
         fromText,
         required,
@@ -171,7 +261,7 @@ export function createField<T>(name: string, fieldType: FieldType, toText: (valu
     }
 }
 
-export function createFieldString(name: string, required: boolean, min?: number, max?: number, validations?: Validation<string>[]) {
+export function createFieldString(name: string, labels: FieldLabels, required: boolean, min?: number, max?: number, validations?: Validation<string>[]) {
     validations = validations || [];
     if (min)
         validations.unshift(
@@ -187,10 +277,11 @@ export function createFieldString(name: string, required: boolean, min?: number,
                     return "Preenchimento máximo de " + max + " caracteres";
             }
         )
-    return createField(name, FieldType.String, (v: string) => v, (v: string) => v, required, validations);
+    return createField(name, labels, FieldType.String, (v: string) => v, (v: string) => v, required, validations);
 }
 
-export function createFieldNumber(name: string, decimals: number, required: boolean, min?: number, max?: number, validations?: Validation<number>[]) {
+
+export function createFieldNumber(name: string, labels: FieldLabels, decimals: number, required: boolean, min?: number, max?: number, validations?: Validation<number>[]) {
     validations = validations || [];
     if (min)
         validations.unshift(
@@ -206,7 +297,7 @@ export function createFieldNumber(name: string, decimals: number, required: bool
                     return "O máximo é " + toText(max);
             }
         )
-    return createField(name, FieldType.Number, toText, fromText, required, validations);
+    return createField(name, labels, FieldType.Number, toText, fromText, required, validations);
 
     function toText(value: number): string {
         if (!value)
@@ -219,5 +310,22 @@ export function createFieldNumber(name: string, decimals: number, required: bool
         if (decimals == 0)
             return parseInt(text)
         return parseFloat(text);
+    }
+}
+
+export function createFieldBoolean(name: string, labels: FieldLabels, required: boolean, validations?: Validation<boolean>[]) {
+    validations = validations || [];
+    return createField(name, labels, FieldType.Number, toText, fromText, required, validations);
+
+    function toText(value: boolean): string {
+        if (value === true)
+            return <I18N>'Sim';
+        if (value === false)
+            return <I18N>'Não';
+        return "";
+    }
+
+    function fromText(text: string): boolean {
+        return text && /s(im)?/i.test(text);
     }
 }

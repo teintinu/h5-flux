@@ -2,14 +2,14 @@
 /// <reference path="../typings/chai/chai.d.ts" />
 
 import chai = require('chai');
-import {createH5Event} from "../lib/h5-flux";
+import {createEvent} from "../lib/h5-flux";
 var expect = chai.expect;
 
 describe('h5-event', () => {
 
     it('emit/listen', (done) => {
-        var e = createH5Event<number, number>("e")
-        e.emitter.emit(1, 1);
+        var e = createEvent<number, number>("e");
+        e.emit(1, 1);
         e.on(1, (payload) => {
             expect(payload, 'payload').to.equals(1);
             done();
@@ -17,8 +17,8 @@ describe('h5-event', () => {
     });
 
     it('emit/listen different key', (done) => {
-        var e = createH5Event<string, number>("e")
-        e.emitter.emit("1", 1);
+        var e = createEvent<string, number>("e")
+        e.emit("1", 1);
         e.on("2", (payload) => {
             expect(payload, 'unexpected payload').to.equals(1);
         });
@@ -30,16 +30,16 @@ describe('h5-event', () => {
     });
 
     it('emit/unlisten', (done) => {
-        var e = createH5Event<number, number>("e")
+        var e = createEvent<number, number>("e")
         var fn = (payload: number) => {
             expect(payload, 'payload').to.equals(1);
-            e.emitter.emit(1,2);
+            e.emit(1,2);
             e.off(1, fn);
             setTimeout(() => {
                 done();
             }, 25);
         };
-        e.emitter.emit(1,1);
+        e.emit(1,1);
         e.on(1,fn);
     });
 
@@ -48,8 +48,8 @@ describe('h5-event', () => {
             value: number,
             sub: { value: number }
         }
-        var e = createH5Event<number,Sample>("e")
-        e.emitter.emit(1,{ value: 1, sub: { value: 2 } });
+        var e = createEvent<number,Sample>("e")
+        e.emit(1,{ value: 1, sub: { value: 2 } });
         e.on(1,(payload) => {
             expect(payload.value, 'payload').to.equals(1);
             payload.value = 10;
@@ -64,8 +64,8 @@ describe('h5-event', () => {
     });
 
     it('payload must be an immutable array', (done) => {
-        var e = createH5Event<number, number[]>("e")
-        e.emitter.emit(1, [1, 2]);
+        var e = createEvent<number, number[]>("e")
+        e.emit(1, [1, 2]);
         e.on(1, (payload) => {
             expect(payload, 'payload').to.deep.equal([1, 2]);
             expect(() => {
