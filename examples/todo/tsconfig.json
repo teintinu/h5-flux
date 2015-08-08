@@ -13,8 +13,11 @@
     ],
     "files": [
         "../../lib/h5-flux.d.ts",
-        "./data/todoitem.ts",
-        "./events/todoitem.ts",
+        "./actions/add_todo.ts",
+        "./actions/load_todos.ts",
+        "./data/todo.ts",
+        "./events/todo.ts",
+        "./schema/todoitem.ts",
         "./stores/todoitem.ts",
         "./stores/todolist.ts"
     ]

@@ -1,39 +1,58 @@
-import {
-createFieldString,
-createFieldBoolean,
-createStore} from "../../../lib/h5-flux.d";
+// import {dispath} from "../../../lib/h5-flux.d";
+//
+// import {TodoListData} from "../data/todo";
+// import {addTodo} from "../actions/add_todo";
+// import {loadTodos} from "../actions/load_todos";
+//
+// function dispath<STATE,PAYLOAD>(action, state:STATE, payload: PAYLOAD)
+// {
+//
+// }
+//
+// function todoState(initialState: TodoListData) {
+//     var store= {
+//         state: initialState,
+//         loadTodos: function(){
+//            dispath(loadTodos, store.state);
+//         },
+//         addTodo: function(text: string){
+//            dispath(addTodo, store.state, text);
+//         }
+//     }
+//     return store;
+// }
 
-import {TodoItemData} from "../data/todoitem";
-import {todoitem_was_edited} from "../events/todoitem";
+// function actions()
+// {
+//
+// }
+//
+// export class TodoItemStore implements Storef<number,TodoItemData>
+// {
+//
+// };
 
-var instance = {
-    finder,
-    schema,
-    emit: {
-        todo_was_edited: todoitem_was_edited.refEmitter()
-    },
-    listen: {}
-};
+//
+// import {TodoItemData} from "../data/todoitem";
+// import {todoitem_was_edited} from "../events/todoitem";
+//
+// var actions = {
+//
+// }
+//
+// var store=createStore2(<Store<typeof schema>>{
+//     schema: schema
+// });
+//
+// export default store;
 
-var schema = {
-    title: createFieldString("title", { caption: "Título", hint: "Título da tarefa" }, true),
-    done: createFieldBoolean("done", { caption: "Feito", hint: "Tarefa feita" }, true)
-};
- 
-function finder(key: number, callback: (err: Error, data: TodoItemData) => void) {
-    if (key)
-        callback(null, sample_data[key - 1]);
-    else
-        callback(null, <TodoItemData>{});
-}
+//export var todoItemStore = createStore(<number>null, instance);
 
-export var todoItemStore = createStore(0, instance);
-
-var sample_data: TodoItemData[] = [
-    { title: 'task 1', done: false },
-    { title: 'task 2', done: true },
-    { title: 'task 3', done: false }
-];
+// var sample_data: TodoItemData[] = [
+//     { title: 'task 1', done: false },
+//     { title: 'task 2', done: true },
+//     { title: 'task 3', done: false }
+// ];
 //
 // type H5Type<T> = {
 //     toString(value: T): string;
@@ -68,3 +87,13 @@ var sample_data: TodoItemData[] = [
 //         catches: []
 //     }
 // }
+// var instance = {
+//     key: <number>0,
+//     data: <TodoItemData>null,
+//     schema,
+//     emit: {
+//         todo_was_edited: todoitem_was_edited.refEmitter()
+//     },
+//     listen: {}
+// };
+//

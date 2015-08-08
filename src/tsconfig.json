@@ -6,7 +6,7 @@
         "removeComments": true,
         "preserveConstEnums": true,
         "outDir": "../lib/",
-        "out": "../lib/-flux.js",
+        "out": "../lib/h5flux.js",
         "sourceMap": true
     },
     "buildOnSave": true,
@@ -15,6 +15,6 @@
         "./**/*.ts"
     ],
     "files": [
-        "./h5-flux.ts"
+        "./h5flux.ts"
     ]
 }
