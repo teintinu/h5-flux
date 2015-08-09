@@ -2,14 +2,36 @@
 /// <reference path="../typings/chai/chai.d.ts" />
 
 import chai = require('chai');
-import {createFieldString, createFieldNumber} from "../lib/h5flux";
+import {leaks} from "../lib/h5flux";
+import {createSumStore} from "./cases/sum";
 //import {TodoItemStore} from "../examples/todo/stores/todoitem";
 
 var expect = chai.expect;
 
 describe('h5-store', () => {
 
-    it('sum 1 + 1', (done) => {
+    var initial_leaks: number;
+    beforeEach(function() {
+        initial_leaks = leaks();
+    });
+
+    afterEach(function(done) {
+        setTimeout(() => {
+            expect(leaks(), 'leaks').to.be.equal(initial_leaks);
+            done();
+        }, 25)
+    });
+
+
+    it('sum 0 + 1', (done) => {
+
+        var sum_store = createSumStore.addRef();
+        expect(sum_store.getState(), 'initialState').to.be.equal(0);
+        sum_store.sum(1);
+        expect(sum_store.getState(), 'one added').to.be.equal(1);
+        sum_store.releaseRef();
+        done();
+        //sum_store.
 
         //
         // acao.exec=(r){
