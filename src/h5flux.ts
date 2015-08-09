@@ -20,7 +20,7 @@ export interface Event<PAYLOAD> {
 }
 
 export function asap(fn: () => void) {
-    setTimeout(fn, 1);
+    setTimeout(fn, 0);
 }
 
 export function createEvent<PAYLOAD>(name: string): Event<PAYLOAD> {

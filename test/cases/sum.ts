@@ -1,4 +1,4 @@
-import {createAction, createEvent, Disposable, Reference, createDisposable, DisposableChildren} from "../../lib/h5flux";
+import {createAction, createEvent, Disposable, Event, Reference, createDisposable, DisposableChildren} from "../../lib/h5flux";
 
 export var ev_sum_result = createEvent<number>("sum-result")
 export var ac_sum = createAction({
@@ -16,28 +16,38 @@ interface Store<STATE> extends Reference {
 }
 
 export function createStore<STATE, T extends Reference, ACTIONS extends DisposableChildren>(
-    initialState: STATE, actions: ACTIONS, createInstance: (state: STATE, action: ACTIONS) => T) {
+    initialState: STATE, actions: ACTIONS, catches: Event<STATE>[], createInstance: (state: STATE, action: ACTIONS) => T) {
     return createDisposable(actions, (actions) => {
         var state: STATE = initialState;
         var instance = createInstance(state, actions);
-        type INSTANCE = Store<STATE> & typeof instance ;
+        type INSTANCE = Store<STATE> & typeof instance;
         (<INSTANCE>instance).getState = () => state;
+        catches.forEach((e) => e.on(changed));
         return {
             instance: (<INSTANCE>instance),
-            destructor: () => { }
+            destructor: () => {
+                catches.forEach((e) => e.off(changed));
+            }
+        }
+        function changed(newState: STATE) {
+            state = newState;
         }
     });
 }
 
-export var createSumStore = createStore(0, {
-    ac_sum: ac_sum.addRef()
-}, (state, actions) => {
-    return {
-        sum: function(payload: number) {
-            actions.ac_sum.dispatch(state, payload);
-        }
-    }
-})
+export var createSumStore =
+    createStore(0,
+        {
+            ac_sum: ac_sum.addRef()
+        },
+        [ev_sum_result],
+        (state, actions) => {
+            return {
+                sum: function(payload: number) {
+                    actions.ac_sum.dispatch(state, payload);
+                }
+            }
+        })
 // function createSumStore(initialState: number) {
 //     return createDisposable({
 //         ac_sum: ac_sum.addRef()

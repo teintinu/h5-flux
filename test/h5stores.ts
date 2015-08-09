@@ -28,9 +28,11 @@ describe('h5-store', () => {
         var sum_store = createSumStore.addRef();
         expect(sum_store.getState(), 'initialState').to.be.equal(0);
         sum_store.sum(1);
-        expect(sum_store.getState(), 'one added').to.be.equal(1);
-        sum_store.releaseRef();
-        done();
+        setTimeout(() => {
+            expect(sum_store.getState(), 'one added').to.be.equal(1);
+            sum_store.releaseRef();
+            done();
+        }, 25);
         //sum_store.
 
         //
