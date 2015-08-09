@@ -42,19 +42,14 @@ export declare enum ActionStep {
     notify = 1,
 }
 export declare function createAction<STATE, PAYLOAD>(action: ActionDefinition<STATE, PAYLOAD>): ActionInstance<STATE, PAYLOAD>;
-export declare abstract class Store<STATE> {
-    private _state;
-    private _listeners;
-    private _change;
-    constructor(initialState: STATE);
-    state: STATE;
-    change: {
-        on: (callback: (payload: STATE) => void) => void;
-        off: (callback: (payload: STATE) => void) => void;
+export interface Store<STATE> extends Reference {
+    getState(): STATE;
+    changed: {
+        on: EventToggle<STATE>;
+        off: EventToggle<STATE>;
     };
-    protected dispatch<PAYLOAD>(action: ActionReference<STATE, PAYLOAD>, payload: PAYLOAD): void;
-    protected listen(event: Event<STATE>): void;
 }
+export declare function createStore<STATE, T extends Reference, ACTIONS extends DisposableChildren>(initialState: STATE, actions: ACTIONS, catches: Event<STATE>[], createInstance: (state: STATE, action: ACTIONS) => T): Disposable<Store<STATE> & T>;
 export declare type I18N = string;
 export declare type Validation<T> = (value: T) => I18N;
 export declare enum FieldType {

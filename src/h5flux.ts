@@ -205,173 +205,48 @@ export function createAction<STATE, PAYLOAD>(action: ActionDefinition<STATE, PAY
 
 }
 
-export abstract class Store<STATE> {
-    private _state: STATE;
-    private _listeners: EventListener<STATE>[];
-    private _change: {
-      on: EventToggle<STATE>,
-      off: EventToggle<STATE>
-    }
-    constructor(initialState: STATE) {
-        this._state = initialState;
-        this._change.on = (listener: EventListener<STATE>)=>{
-          if (this._listeners.indexOf(listener)==-1)
-            this._listeners.push(listener);
-        }
-        this._change.off = (listener: EventListener<STATE>)=>{
-          let i=this._listeners.indexOf(listener);
-          if (i>=0)
-            this._listeners.splice(i,1);
-        }
-    }
-    public get state(): STATE {
-        return this._state;
-    }
-    public get change() {
-        return this._change;
-    }
-    protected dispatch<PAYLOAD>(action: ActionReference<STATE, PAYLOAD>, payload: PAYLOAD) {
-        action.dispatch(this._state, payload);
-    }
-    protected listen(event: Event<STATE>) {
-        event.on((payload) => {
-          this._listeners.forEach((e)=>
-            asap(()=>{e(payload)})
-          );
-        });
+export interface Store<STATE> extends Reference {
+    getState(): STATE;
+    changed: {
+        on: EventToggle<STATE>,
+        off: EventToggle<STATE>,
     }
 }
 
-
-// export interface Action<PAYLOAD> {
-//     dispatxch(payload: PAYLOAD): void;
-// }
-//
-// export function createAction<STATE, PAYLOAD>(name: string, transformer: (state: STATE, PAYLOAD: PAYLOAD) => void) {
-//     var action_event = createEvent<PAYLOAD>(name);
-//     return {
-//         dispatch
-//     }
-//     function dispatch(payload: PAYLOAD) {
-//         action_event.emit(payload);
-//     }
-// }
-
-// export interface Store<KEY, DATA> {
-//   refCount(): number;
-//   addRef(key: KEY): StoreRef<KEY, DATA>;
-// }
-//
-// export interface StoreRef<KEY, DATA> {
-//     key: KEY;
-//       data: DATA;
-//
-//
-// export function createStore<KEY,DATA>(): StoreRef<KEY,DATA> {
-//
-//     type InternalInstance = { refCount: number, data: any };
-//
-//     var instances: any = {};
-//
-//     return {
-//         refCount,
-//         addRef
-//     };
-//
-//     function refCount(key: KEY) {
-//         var instance = <InternalInstance>instances[<any>key];
-//         if (instance) {
-//             if (instance.refCount < 1)
-//                 return -1;
-//             return instance.refCount;
-//         }
-//         return 0;
-//     }
-//
-//     function addRef(key: KEY,data:DATA): StoreRef<KEY,DATA> {
-//         if (typeof key === "Object")
-//             key = Object.freeze<KEY>(key);
-//         var instance = <InternalInstance>(instances[<any>key]);
-//         if (!instance) {
-//             activeStores++;
-//             instance = createInstance();
-//             instances[<any>key] = instance;
-//         }
-//         return createRef(instance);
-//
-//         function createInstance() {
-//
-//             var instance: InternalInstance = {
-//                 refCount: 0,
-//                 data: undefined,
-//                 emit: createEmitters(),
-//                 listen: createListenners()
-//             }
-//
-//             return instance;
-//
-//             function createEmitters() {
-//                 var keys = Object.keys(emit);
-//                 var emitters: any = {};
-//                 for (var i = 0; i < keys.length; i++) {
-//                     var k = keys[i];
-//                     var refEmit = <EventRefEmmiter<KEY,any>>emit[k];
-//                     emitters[k] = () => refEmit.emit(key, instance.data);
-//                 }
-//                 return emitters;
-//             }
-//
-//             function createListenners() {
-//                 var keys = Object.keys(listen);
-//                 var listenners: any = {};
-//                 for (var i = 0; i < keys.length; i++) {
-//                     var k = keys[i];
-//                     var {on, off, callback} = <EventRefListenner<KEY,any>>listen[k];
-//                     on(key, callback);
-//                     listenners[k] = () => off(key, callback);
-//                 }
-//                 return listenners;
-//             }
-//         }
-//
-//         function destroyInstance() {
-//             var listen = instances[<any>key].listen;
-//             delete instances[<any>key];
-//             var keys = Object.keys(listen);
-//             for (var i = 0; i < keys.length; i++) {
-//                 var off = listen[keys[i]];
-//                 off();
-//             }
-//             activeStores--;
-//         }
-//
-//         function createRef(instance: InternalInstance): INSTANCE {
-//             var active = true;
-//             instance.refCount++;
-//             return <INSTANCE><any>{
-//                 key,
-//                 data: data,
-//                 schema: schema,
-//                 emit: instance.emit,
-//                 listen: instance.listen,
-//                 releaseRef: () => {
-//                     if (active) {
-//                         if (instance.refCount <= 1) {
-//                             destroyInstance();
-//                         }
-//                         else
-//                             instance.refCount--;
-//                         active = false;
-//                     }
-//                 }
-//             };
-//         }
-//     }
-//
-//     function checkStoreInstance() {
-//         // TODO
-//     }
-// }
+export function createStore<STATE, T extends Reference, ACTIONS extends DisposableChildren>(
+    initialState: STATE, actions: ACTIONS, catches: Event<STATE>[], createInstance: (state: STATE, action: ACTIONS) => T) {
+    return createDisposable(actions, (actions) => {
+        var state: STATE = initialState;
+        var listenners: EventListener<STATE>[] = [];
+        var instance = createInstance(state, actions);
+        type INSTANCE = Store<STATE> & typeof instance;
+        (<INSTANCE>instance).getState = () => state;
+        (<INSTANCE>instance).changed = {
+            on: add_listenner,
+            off: remove_listenner,
+        }
+        catches.forEach((e) => e.on(changed));
+        return {
+            instance: (<INSTANCE>instance),
+            destructor: () => {
+                catches.forEach((e) => e.off(changed));
+            }
+        }
+        function add_listenner(l: EventListener<STATE>) {
+            if (listenners.indexOf(l) == -1)
+                listenners.push(l);
+        }
+        function remove_listenner(l: EventListener<STATE>) {
+            var i = listenners.indexOf(l);
+            if (i >= 0)
+                listenners.splice(i, 1);
+        }
+        function changed(newState: STATE) {
+            state = newState;
+            listenners.forEach((l) => asap(() => l(newState)))
+        }
+    });
+}
 
 export type I18N = string;
 export type Validation<T> = (value: T) => I18N;
