@@ -1,5 +1,6 @@
 {
     "compilerOptions": {
+        "target": "es5",
         "module": "commonjs",
         "noImplicitAny": true,
         "removeComments": true,
@@ -12,7 +13,7 @@
         "./**/*.ts"
     ],
     "files": [
-        "../../lib/h5-flux.d.ts",
+        "../../lib/h5flux.d.ts",
         "./actions/add_todo.ts",
         "./actions/load_todos.ts",
         "./data/todo.ts",

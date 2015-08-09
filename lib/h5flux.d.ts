@@ -1,7 +1,4 @@
-export declare function getCurrentStoreCount(): {
-    activeEvents: number;
-    activeStores: number;
-};
+export declare function leaks(): number;
 export declare type EventEmmiter<PAYLOAD> = (payload: PAYLOAD) => void;
 export declare type EventListenner<PAYLOAD> = (payload: PAYLOAD) => void;
 export declare type EventToggle<PAYLOAD> = (callback: EventListenner<PAYLOAD>) => void;
@@ -9,15 +6,39 @@ export interface Event<PAYLOAD> {
     name: string;
     emit: EventEmmiter<PAYLOAD>;
     on: EventToggle<PAYLOAD>;
+    once: EventToggle<PAYLOAD>;
     off: EventToggle<PAYLOAD>;
 }
 export declare function asap(fn: () => void): void;
 export declare function createEvent<PAYLOAD>(name: string): Event<PAYLOAD>;
-export interface Action<STATE, PAYLOAD> {
+export interface Reference extends Object {
+    releaseRef?: () => void;
+}
+export interface Disposable<T extends Reference> {
+    addRef(): T;
+    refCount(): number;
+}
+export declare type DisposableCreatorReturn<T extends Reference> = {
+    instance: T;
+    destructor: () => void;
+};
+export declare type DisposableCreator<T extends Reference> = () => DisposableCreatorReturn<T>;
+export declare function createDisposable<T extends Reference>(creator: DisposableCreator<T>): Disposable<T>;
+export interface ActionDefinition<STATE, PAYLOAD> {
     name: string;
     reduce(state: STATE, payload: PAYLOAD): STATE;
     notify: Event<STATE>[];
 }
+export interface ActionReference<STATE, PAYLOAD> extends Reference {
+    dispatch(state: STATE, payload: PAYLOAD): void;
+}
+export interface ActionInstance<STATE, PAYLOAD> extends Disposable<ActionReference<STATE, PAYLOAD>> {
+}
+export declare enum ActionStep {
+    reduce = 0,
+    notify = 1,
+}
+export declare function createAction<STATE, PAYLOAD>(action: ActionDefinition<STATE, PAYLOAD>): ActionInstance<STATE, PAYLOAD>;
 export declare type I18N = string;
 export declare type Validation<T> = (value: T) => I18N;
 export declare enum FieldType {

@@ -1,12 +1,12 @@
 {
     "compilerOptions": {
+        "target": "es5",
         "module": "commonjs",
         "declaration": true,
         "noImplicitAny": true,
         "removeComments": true,
         "preserveConstEnums": true,
         "outDir": "../lib/",
-        "out": "../lib/h5flux.js",
         "sourceMap": true
     },
     "buildOnSave": true,

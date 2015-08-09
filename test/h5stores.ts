@@ -2,24 +2,15 @@
 /// <reference path="../typings/chai/chai.d.ts" />
 
 import chai = require('chai');
-//import {createStore, createFieldString, createFieldNumber} from "../lib/h5-flux";
+import {createFieldString, createFieldNumber} from "../lib/h5flux";
 //import {TodoItemStore} from "../examples/todo/stores/todoitem";
 
 var expect = chai.expect;
 
 describe('h5-store', () => {
 
-    it('customer', (done) => {
+    it('sum 1 + 1', (done) => {
 
-        // interface Data {
-        //     name: string;
-        //     age: number
-        // }
-        //
-        // var estoriaref = {
-        //   key: number,
-        //   data: Data
-        // }
         //
         // acao.exec=(r){
         //    return {x}
@@ -54,9 +45,9 @@ describe('h5-store', () => {
     });
 
     it('add a todo', (done) => {
-    //   var sample = TodoItemStore.addRef();
-       //sample.
-       //sample.data.title = "Sample task";
-       //sample.emitters.todo_was_edited.emit();
+        //   var sample = TodoItemStore.addRef();
+        //sample.
+        //sample.data.title = "Sample task";
+        //sample.emitters.todo_was_edited.emit();
     });
 });

@@ -1,8 +1,8 @@
-import {createEvent} from "../../../lib/h5-flux.d";
-import {TodoListData} from "../data/todo";
-
-export var todolist_was_changed =
-  createEvent<TodoListData>('todoitem_was_changed');
+// import {createEvent} from "../../../lib/h5flux.d";
+// import {TodoListData} from "../data/todo";
+//
+// export var todolist_was_changed =
+//   createEvent<TodoListData>('todoitem_was_changed');
 
 /** ocorre sempre que o item for modificado
  mesmo ainda não estando salvo.

@@ -1,5 +1,6 @@
 {
     "compilerOptions": {
+        "target": "es5",
         "module": "commonjs",
         "noImplicitAny": true,
         "removeComments": true,
@@ -12,8 +13,7 @@
         "./**/*.ts"
     ],
     "files": [
-        "../lib/-flux.d.ts",
-        "../lib/h5-flux.d.ts",
+        "../lib/h5flux.d.ts",
         "../examples/todo/actions/add_todo.ts",
         "../examples/todo/actions/load_todos.ts",
         "../examples/todo/data/todo.ts",
@@ -21,7 +21,10 @@
         "../examples/todo/schema/todoitem.ts",
         "../examples/todo/stores/todoitem.ts",
         "../examples/todo/stores/todolist.ts",
-        "./h5-event.ts",
-        "./h5-store.ts"
+        "./cases/sum.ts",
+        "./h5actions.ts",
+        "./h5disposable.ts",
+        "./h5events.ts",
+        "./h5stores.ts"
     ]
 }

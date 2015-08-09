@@ -13,17 +13,38 @@ describe('h5-event', () => {
         e.on((payload) => {
             expect(payload, 'payload').to.equals(1);
             done();
-        });
+        }); 
     });
 
-    it('emit/listen different key', (done) => {
+    it('emit/listen once', (done) => {
+        var count = 0;
         var e = createEvent<number>("e")
-        e.emit(1);
-        e.on((payload) => {
-            expect(payload, 'unexpected payload').to.equals(1);
+        e.emit(10);
+        e.emit(20);
+        e.once((payload) => {
+            count++;
+            expect(payload, 'unexpected payload').to.equals(10);
         });
 
         setTimeout(() => {
+            expect(count).to.equals(1);
+            done();
+        }, 25);
+
+    });
+
+    it('emit/listen many', (done) => {
+        var count = 0;
+        var e = createEvent<number>("e")
+        e.emit(10);
+        e.emit(20);
+        e.on((payload) => {
+            count++;
+            expect(payload, 'unexpected payload').to.equals(count * 10);
+        });
+
+        setTimeout(() => {
+            expect(count).to.equals(2);
             done();
         }, 25);
 
@@ -65,7 +86,7 @@ describe('h5-event', () => {
 
     it('payload must be an immutable array', (done) => {
         var e = createEvent<number[]>("e")
-        e.emit([1,2]);
+        e.emit([1, 2]);
         e.on((payload) => {
             expect(payload, 'payload').to.deep.equal([1, 2]);
             expect(() => {
