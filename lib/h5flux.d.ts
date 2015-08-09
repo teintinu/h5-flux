@@ -1,7 +1,7 @@
 export declare function leaks(): number;
 export declare type EventEmmiter<PAYLOAD> = (payload: PAYLOAD) => void;
-export declare type EventListenner<PAYLOAD> = (payload: PAYLOAD) => void;
-export declare type EventToggle<PAYLOAD> = (callback: EventListenner<PAYLOAD>) => void;
+export declare type EventListener<PAYLOAD> = (payload: PAYLOAD) => void;
+export declare type EventToggle<PAYLOAD> = (callback: EventListener<PAYLOAD>) => void;
 export interface Event<PAYLOAD> {
     name: string;
     emit: EventEmmiter<PAYLOAD>;
@@ -22,8 +22,11 @@ export declare type DisposableCreatorReturn<T extends Reference> = {
     instance: T;
     destructor: () => void;
 };
-export declare type DisposableCreator<T extends Reference> = () => DisposableCreatorReturn<T>;
-export declare function createDisposable<T extends Reference>(creator: DisposableCreator<T>): Disposable<T>;
+export interface DisposableChildren {
+    [name: string]: Reference;
+}
+export declare type DisposableCreator<T extends Reference, CHILDREN extends DisposableChildren> = (children: CHILDREN) => DisposableCreatorReturn<T>;
+export declare function createDisposable<T extends Reference, CHILDREN extends DisposableChildren>(children: CHILDREN, creator: DisposableCreator<T, CHILDREN>): Disposable<T>;
 export interface ActionDefinition<STATE, PAYLOAD> {
     name: string;
     reduce(state: STATE, payload: PAYLOAD): STATE;
@@ -39,6 +42,19 @@ export declare enum ActionStep {
     notify = 1,
 }
 export declare function createAction<STATE, PAYLOAD>(action: ActionDefinition<STATE, PAYLOAD>): ActionInstance<STATE, PAYLOAD>;
+export declare abstract class Store<STATE> {
+    private _state;
+    private _listeners;
+    private _change;
+    constructor(initialState: STATE);
+    state: STATE;
+    change: {
+        on: (callback: (payload: STATE) => void) => void;
+        off: (callback: (payload: STATE) => void) => void;
+    };
+    protected dispatch<PAYLOAD>(action: ActionReference<STATE, PAYLOAD>, payload: PAYLOAD): void;
+    protected listen(event: Event<STATE>): void;
+}
 export declare type I18N = string;
 export declare type Validation<T> = (value: T) => I18N;
 export declare enum FieldType {

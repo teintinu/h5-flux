@@ -2,14 +2,14 @@ var _leaks = 0;
 
 export function leaks(){
   return _leaks;
-} 
+}
 
 // TODO PAYLOAD must be immutable
 
 export type EventEmmiter<PAYLOAD> = (payload: PAYLOAD) => void;
-export type EventListenner<PAYLOAD> = (payload: PAYLOAD) => void;
+export type EventListener<PAYLOAD> = (payload: PAYLOAD) => void;
 
-export type EventToggle<PAYLOAD> = (callback: EventListenner<PAYLOAD>) => void;
+export type EventToggle<PAYLOAD> = (callback: EventListener<PAYLOAD>) => void;
 
 export interface Event<PAYLOAD> {
     name: string;
@@ -29,8 +29,8 @@ export function createEvent<PAYLOAD>(name: string): Event<PAYLOAD> {
     //   [key: KEY]: EventListenner<KEY, PAYLOAD>;
     // }
 
-    let on_listenners: EventListenner<PAYLOAD>[] = [],
-        once_listenners: EventListenner<PAYLOAD>[] = [];
+    let on_listenners: EventListener<PAYLOAD>[] = [],
+        once_listenners: EventListener<PAYLOAD>[] = [];
 
     var event = <Event<PAYLOAD>>{
         name,
@@ -57,17 +57,17 @@ export function createEvent<PAYLOAD>(name: string): Event<PAYLOAD> {
         });
     };
 
-    function on(callback: EventListenner<PAYLOAD>) {
+    function on(callback: EventListener<PAYLOAD>) {
         if (on_listenners.indexOf(callback) == -1)
             on_listenners.push(callback);
     }
 
-    function once(callback: EventListenner<PAYLOAD>) {
+    function once(callback: EventListener<PAYLOAD>) {
         if (once_listenners.indexOf(callback) == -1)
             once_listenners.push(callback);
     }
 
-    function off(callback: EventListenner<PAYLOAD>) {
+    function off(callback: EventListener<PAYLOAD>) {
         let i = on_listenners.indexOf(callback);
         if (i != -1) {
             on_listenners.splice(i, 1);
@@ -97,11 +97,14 @@ export type DisposableCreatorReturn<T extends Reference> = {
     destructor: () => void
 }
 
-export type DisposableCreator<T extends Reference> = () => DisposableCreatorReturn<T>;
+export interface DisposableChildren {
+    [name: string]: Reference
+}
 
+export type DisposableCreator<T extends Reference, CHILDREN extends DisposableChildren> = (children: CHILDREN) => DisposableCreatorReturn<T>;
 
-export function createDisposable<T extends Reference>(
-    creator: DisposableCreator<T>
+export function createDisposable<T extends Reference, CHILDREN extends DisposableChildren>(
+    children: CHILDREN, creator: DisposableCreator<T, CHILDREN>
 ): Disposable<T> {
     var object: DisposableCreatorReturn<T>;
     return { addRef, refCount };
@@ -111,7 +114,7 @@ export function createDisposable<T extends Reference>(
     function addRef(): T {
         if (!object) {
           _leaks++;
-            object = creator();
+            object = creator(children);
             (<any>object).__refCount = 0;
             object.instance.releaseRef = releaseRef;
         }
@@ -119,6 +122,10 @@ export function createDisposable<T extends Reference>(
         function releaseRef() {
             asap(() => {
                 if ((<any>object).__refCount <= 1) {
+                  var keys = Object.keys(children);
+                  for (let i = 0; i < keys.length; i++) {
+                      children[keys[i]].releaseRef();
+                  }
                     let destructor=(<any>object).destructor;
                     object = undefined;
                     destructor()
@@ -155,7 +162,7 @@ export function createAction<STATE, PAYLOAD>(action: ActionDefinition<STATE, PAY
         payload: PAYLOAD
     }
 
-    return createDisposable(createInstance);
+    return createDisposable({}, createInstance);
 
     function createInstance(): DisposableCreatorReturn<ActionReference<STATE, PAYLOAD>> {
 
@@ -198,22 +205,40 @@ export function createAction<STATE, PAYLOAD>(action: ActionDefinition<STATE, PAY
 
 }
 
-abstract class Store<STATE> {
+export abstract class Store<STATE> {
     private _state: STATE;
-    private _listeners: Event<STATE>[];
+    private _listeners: EventListener<STATE>[];
+    private _change: {
+      on: EventToggle<STATE>,
+      off: EventToggle<STATE>
+    }
     constructor(initialState: STATE) {
         this._state = initialState;
+        this._change.on = (listener: EventListener<STATE>)=>{
+          if (this._listeners.indexOf(listener)==-1)
+            this._listeners.push(listener);
+        }
+        this._change.off = (listener: EventListener<STATE>)=>{
+          let i=this._listeners.indexOf(listener);
+          if (i>=0)
+            this._listeners.splice(i,1);
+        }
     }
     public get state(): STATE {
         return this._state;
     }
-    protected dispatch<PAYLOAD>(action: ActionInstance<STATE, PAYLOAD>, payload: PAYLOAD) {
-        //      action.dispatch(this._state, payload);
+    public get change() {
+        return this._change;
+    }
+    protected dispatch<PAYLOAD>(action: ActionReference<STATE, PAYLOAD>, payload: PAYLOAD) {
+        action.dispatch(this._state, payload);
     }
     protected listen(event: Event<STATE>) {
         event.on((payload) => {
-            //this.
-        })
+          this._listeners.forEach((e)=>
+            asap(()=>{e(payload)})
+          );
+        });
     }
 }
 

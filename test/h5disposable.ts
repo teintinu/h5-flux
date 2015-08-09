@@ -12,8 +12,11 @@ describe('disposable', () => {
         initial_leaks = leaks();
     });
 
-    afterEach(function() {
+    afterEach(function(done) {
+      setTimeout(()=>{
         expect(leaks(), 'leaks').to.be.equal(initial_leaks);
+        done();
+      },25)
     });
 
     it('addRef / leak', (done) => {
@@ -24,7 +27,7 @@ describe('disposable', () => {
 
         var count = 0;
 
-        var disposable = createDisposable(creator);
+        var disposable = createDisposable({}, creator);
         expect(count, 'count').to.deep.equal(0);
         expect(disposable.refCount(), 'refcount').to.deep.equal(0);
 
@@ -54,7 +57,7 @@ describe('disposable', () => {
 
         var count = 0;
 
-        var disposable = createDisposable(creator);
+        var disposable = createDisposable({}, creator);
         expect(count, 'coun1t').to.deep.equal(0);
         expect(disposable.refCount(), 'refcount1').to.deep.equal(0);
 
@@ -90,7 +93,7 @@ describe('disposable', () => {
 
         var count = 0;
 
-        var disposable = createDisposable(creator);
+        var disposable = createDisposable({}, creator);
         expect(count, 'count1').to.deep.equal(0);
         expect(disposable.refCount(), 'refcount1').to.deep.equal(0);
 
@@ -124,7 +127,7 @@ describe('disposable', () => {
         function creator() {
             count++;
             return {
-                instance: <Data>{ x: 100 },
+                instance: <Data>{ x: count*100 },
                 destructor: () => {
                     count--;
                 }
@@ -132,6 +135,77 @@ describe('disposable', () => {
         }
     });
 
+    it('addRef/releaseRef with children', (done) => {
+
+        interface Data extends Reference {
+            x: number
+        }
+
+        var count = 0;
+
+        var chield1 = createDisposable({}, function (children) {
+            count++;
+            return {
+                instance: <Data>{ x: count*100},
+                destructor: () => {
+                    count--;
+                }
+            }
+        });
+        expect(count, 'count-chield1').to.deep.equal(0);
+        expect(chield1.refCount(), 'parent-refcount1').to.deep.equal(0);
+        var chield1_ref = chield1.addRef();
+        expect(count, 'count2-chield1').to.deep.equal(1);
+        expect(chield1.refCount(), 'refcount2-chield1').to.deep.equal(1);
+        expect(chield1_ref.x).to.deep.equal(100);
+        chield1_ref.x = 111;
+
+        var chield2 = createDisposable({}, function (children) {
+            count++;
+            return {
+                instance: <Data>{ x: count*100},
+                destructor: () => {
+                    count--;
+                }
+            }
+        });
+        expect(count, 'count-chield2').to.deep.equal(1);
+        expect(chield2.refCount(), 'parent-refcount1').to.deep.equal(0);
+        var chield2_ref = chield2.addRef();
+        expect(count, 'count2-chield2').to.deep.equal(2);
+        expect(chield2.refCount(), 'refcount2-chield1').to.deep.equal(1);
+        expect(chield2_ref.x).to.deep.equal(200);
+        chield2_ref.x = 222;
+
+        var parent = createDisposable({a:chield1_ref, b:chield2_ref}, function (children) {
+            count++;
+            return {
+                instance: <Data>{ x: count*100 +children.a.x+children.b.x},
+                destructor: () => {
+                    count--;
+                }
+            }
+        });
+        expect(count, 'parent.count1').to.deep.equal(2);
+        expect(parent.refCount(), 'parent.refcount1').to.deep.equal(0);
+        var parent_ref = parent.addRef();
+        expect(count, 'parent.count2').to.deep.equal(3);
+        expect(parent.refCount(), 'parent.refcount2').to.deep.equal(1);
+        expect(parent_ref.x).to.deep.equal(300 + 222 + 111);
+
+        parent_ref.releaseRef();
+        setTimeout(() => {
+            setTimeout(() => {
+                expect(count, 'count5').to.deep.equal(0);
+                expect(parent.refCount(), 'refcount5').to.deep.equal(0);
+                expect(chield1.refCount(), 'refcount5').to.deep.equal(0);
+                expect(chield2.refCount(), 'refcount5').to.deep.equal(0);
+                done();
+            }, 12)
+        }, 12)
+
+
+    });
 
 
 });
