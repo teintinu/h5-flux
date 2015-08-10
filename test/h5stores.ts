@@ -2,54 +2,58 @@
 /// <reference path="../typings/chai/chai.d.ts" />
 
 import chai = require('chai');
-import {leaks} from "../lib/h5flux";
-import {createSumStore} from "./cases/sum";
+import {asap, leaks} from "../lib/h5flux";
+import {sumStore} from "./cases/sum";
 //import {TodoItemStore} from "../examples/todo/stores/todoitem";
 
 var expect = chai.expect;
 
 describe('h5-store', () => {
 
-    var initial_leaks: number;
-    beforeEach(function() {
-        initial_leaks = leaks();
+    beforeEach(function(done) {
+        asap(() => {
+            expect(leaks(), 'before each leaks').to.be.equal(0);
+            done();
+        })
     });
 
     afterEach(function(done) {
-        setTimeout(() => {
-            expect(leaks(), 'leaks').to.be.equal(initial_leaks);
+        asap(() => {
+            expect(leaks(), 'after each leaks').to.be.equal(0);
             done();
-        }, 25)
+        })
     });
 
 
     it('sum 0 + 1 - getState', (done) => {
 
-        var sum_store = createSumStore.addRef();
+        var sum_store = sumStore.addRef();
         expect(sum_store.getState(), 'initialState').to.be.equal(0);
         sum_store.sum(1);
         setTimeout(() => {
             expect(sum_store.getState(), 'one added').to.be.equal(1);
             sum_store.releaseRef();
-            done();
-        }, 25);
+            asap(done);
+        }, 1);
 
     });
 
     it('sum 0 + 1 - listen', (done) => {
 
-        var sum_store = createSumStore.addRef();
+        var sum_store = sumStore.addRef();
         expect(sum_store.getState(), 'initialState').to.be.equal(0);
         sum_store.sum(1);
-        sum_store.changed.on((state) => {
+        sum_store.changed.on(sum_changed);
+        function sum_changed(state: number) {
 
+            sum_store.changed.off(sum_changed);
             expect(state, 'one added - arg').to.be.equal(1);
 
             expect(sum_store.getState(), 'one added').to.be.equal(1);
             sum_store.releaseRef();
             done();
 
-        })
+        }
     });
 
     //sum_store.
@@ -86,10 +90,10 @@ describe('h5-store', () => {
     // expect(s.refCount(1), 's.refCount -2r').to.equals(0);
     // done();
 
-    it('add a todo', (done) => {
-        //   var sample = TodoItemStore.addRef();
-        //sample.
-        //sample.data.title = "Sample task";
-        //sample.emitters.todo_was_edited.emit();
-    });
+    // it('add a todo', (done) => {
+    //     //   var sample = TodoItemStore.addRef();
+    //     //sample.
+    //     //sample.data.title = "Sample task";
+    //     //sample.emitters.todo_was_edited.emit();
+    // });
 });

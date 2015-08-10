@@ -2,10 +2,24 @@
 /// <reference path="../typings/chai/chai.d.ts" />
 
 import chai = require('chai');
-import {createEvent} from "../lib/h5flux";
+import {asap, leaks, createEvent} from "../lib/h5flux";
 var expect = chai.expect;
 
 describe('h5-event', () => {
+
+    beforeEach(function(done) {
+        asap(() => {
+            expect(leaks(), 'before each leaks').to.be.equal(0);
+            done();
+        })
+    });
+
+    afterEach(function(done) {
+        asap(() => {
+            expect(leaks(), 'after each leaks').to.be.equal(0);
+            done();
+        })
+    });
 
     it('emit/listen', (done) => {
         var e = createEvent<number>("e");
@@ -13,7 +27,7 @@ describe('h5-event', () => {
         e.on((payload) => {
             expect(payload, 'payload').to.equals(1);
             done();
-        }); 
+        });
     });
 
     it('emit/listen once', (done) => {
@@ -26,10 +40,12 @@ describe('h5-event', () => {
             expect(payload, 'unexpected payload').to.equals(10);
         });
 
-        setTimeout(() => {
-            expect(count).to.equals(1);
-            done();
-        }, 25);
+        asap(() => {
+            asap(() => {
+                expect(count).to.equals(1);
+                done();
+            });
+        });
 
     });
 
@@ -43,10 +59,12 @@ describe('h5-event', () => {
             expect(payload, 'unexpected payload').to.equals(count * 10);
         });
 
-        setTimeout(() => {
-            expect(count).to.equals(2);
-            done();
-        }, 25);
+        asap(() => {
+            asap(() => {
+                expect(count).to.equals(2);
+                done();
+            });
+        });
 
     });
 
@@ -56,9 +74,9 @@ describe('h5-event', () => {
             expect(payload, 'payload').to.equals(1);
             e.emit(2);
             e.off(fn);
-            setTimeout(() => {
+            asap(() => {
                 done();
-            }, 25);
+            });
         };
         e.emit(1);
         e.on(fn);

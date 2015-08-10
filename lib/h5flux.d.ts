@@ -26,7 +26,7 @@ export interface DisposableChildren {
     [name: string]: Reference;
 }
 export declare type DisposableCreator<T extends Reference, CHILDREN extends DisposableChildren> = (children: CHILDREN) => DisposableCreatorReturn<T>;
-export declare function createDisposable<T extends Reference, CHILDREN extends DisposableChildren>(children: CHILDREN, creator: DisposableCreator<T, CHILDREN>): Disposable<T>;
+export declare function createDisposable<T extends Reference, CHILDREN extends DisposableChildren>(getChildren: () => CHILDREN, creator: DisposableCreator<T, CHILDREN>): Disposable<T>;
 export interface ActionDefinition<STATE, PAYLOAD> {
     name: string;
     reduce(state: STATE, payload: PAYLOAD): STATE;
@@ -49,7 +49,7 @@ export interface Store<STATE> extends Reference {
         off: EventToggle<STATE>;
     };
 }
-export declare function createStore<STATE, T extends Reference, ACTIONS extends DisposableChildren>(initialState: STATE, actions: ACTIONS, catches: Event<STATE>[], createInstance: (state: STATE, action: ACTIONS) => T): Disposable<Store<STATE> & T>;
+export declare function createStore<STATE, T extends Reference, ACTIONS extends DisposableChildren>(initialState: STATE, actions: () => ACTIONS, catches: Event<STATE>[], createInstance: (state: STATE, action: ACTIONS) => T): Disposable<Store<STATE> & T>;
 export declare type I18N = string;
 export declare type Validation<T> = (value: T) => I18N;
 export declare enum FieldType {

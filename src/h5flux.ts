@@ -1,7 +1,7 @@
 var _leaks = 0;
 
-export function leaks(){
-  return _leaks;
+export function leaks() {
+    return _leaks;
 }
 
 // TODO PAYLOAD must be immutable
@@ -19,8 +19,13 @@ export interface Event<PAYLOAD> {
     off: EventToggle<PAYLOAD>;
 }
 
+declare var process: any;
+declare var setTimeout: any;
 export function asap(fn: () => void) {
-    setTimeout(fn, 0);
+    if (process)
+        process.nextTick(fn);
+    else
+        setTimeout(fn, 0)
 }
 
 export function createEvent<PAYLOAD>(name: string): Event<PAYLOAD> {
@@ -104,16 +109,19 @@ export interface DisposableChildren {
 export type DisposableCreator<T extends Reference, CHILDREN extends DisposableChildren> = (children: CHILDREN) => DisposableCreatorReturn<T>;
 
 export function createDisposable<T extends Reference, CHILDREN extends DisposableChildren>(
-    children: CHILDREN, creator: DisposableCreator<T, CHILDREN>
+    getChildren: () => CHILDREN, creator: DisposableCreator<T, CHILDREN>
 ): Disposable<T> {
     var object: DisposableCreatorReturn<T>;
+    var children: CHILDREN;
     return { addRef, refCount };
     function refCount() {
         return (object && (<any>object).__refCount) || 0;
     }
     function addRef(): T {
         if (!object) {
-          _leaks++;
+            _leaks++;
+            if (getChildren)
+                children = getChildren();
             object = creator(children);
             (<any>object).__refCount = 0;
             object.instance.releaseRef = releaseRef;
@@ -122,11 +130,13 @@ export function createDisposable<T extends Reference, CHILDREN extends Disposabl
         function releaseRef() {
             asap(() => {
                 if ((<any>object).__refCount <= 1) {
-                  var keys = Object.keys(children);
-                  for (let i = 0; i < keys.length; i++) {
-                      children[keys[i]].releaseRef();
-                  }
-                    let destructor=(<any>object).destructor;
+                    if (children) {
+                        var keys = Object.keys(children);
+                        for (let i = 0; i < keys.length; i++) {
+                            children[keys[i]].releaseRef();
+                        }
+                    }
+                    let destructor = (<any>object).destructor;
                     object = undefined;
                     destructor()
                     _leaks--;
@@ -162,7 +172,7 @@ export function createAction<STATE, PAYLOAD>(action: ActionDefinition<STATE, PAY
         payload: PAYLOAD
     }
 
-    return createDisposable({}, createInstance);
+    return createDisposable(null, createInstance);
 
     function createInstance(): DisposableCreatorReturn<ActionReference<STATE, PAYLOAD>> {
 
@@ -214,7 +224,7 @@ export interface Store<STATE> extends Reference {
 }
 
 export function createStore<STATE, T extends Reference, ACTIONS extends DisposableChildren>(
-    initialState: STATE, actions: ACTIONS, catches: Event<STATE>[], createInstance: (state: STATE, action: ACTIONS) => T) {
+    initialState: STATE, actions: ()=>ACTIONS, catches: Event<STATE>[], createInstance: (state: STATE, action: ACTIONS) => T) {
     return createDisposable(actions, (actions) => {
         var state: STATE = initialState;
         var listenners: EventListener<STATE>[] = [];

@@ -11,13 +11,15 @@ export var ac_sum = createAction({
     ]
 });
 
-export var createSumStore =
+export var sumStore =
     createStore(0,
-        {
-            ac_sum: ac_sum.addRef()
+        function() {
+            return {
+                ac_sum: ac_sum.addRef()
+            }
         },
         [ev_sum_result],
-        (state, actions) => {
+        function(state, actions) {
             return {
                 sum: function(payload: number) {
                     actions.ac_sum.dispatch(state, payload);
