@@ -15,7 +15,12 @@
     "files": [
         "../../lib/h5flux.d.ts",
         "./actions/add_todo.ts",
+        "./actions/clear_marked.ts",
+        "./actions/delete_todo.ts",
+        "./actions/edit_todo.ts",
         "./actions/load_todos.ts",
+        "./actions/mark_all.ts",
+        "./actions/mark_todo.ts",
         "./data/todo.ts",
         "./events/todo.ts",
         "./schema/todoitem.ts",

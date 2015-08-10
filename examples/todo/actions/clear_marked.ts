@@ -4,18 +4,13 @@ import {createAction} from "../../../lib/h5flux";
 import {TodoListData, TodoItemData} from "../data/todo";
 import {todolist_was_changed} from "../events/todo";
 
-export var addTodo = createAction({
-    name: "ADD_TODO",
+export var clearMarked = createAction({
+    name: "CLEAR_MARKED",
     // persist: function(state: TodoListData, text: string) {
     //   return 0;
     // },
-    reduce: function(state: TodoListData, text: string) {
-        var item: TodoItemData = {
-            id: 0,
-            marked: false,
-            text: text
-        };
-        return [item].concat(state);
+    reduce: function(state: TodoListData) {
+         return state.filter(todo => todo.marked === false);
     },
     notify: [
         todolist_was_changed

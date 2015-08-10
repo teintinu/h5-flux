@@ -3,6 +3,9 @@
 
 import chai = require('chai');
 import {asap, leaks, createEvent} from "../lib/h5flux";
+import {todolist_was_changed} from "../examples/todo/events/todo";
+import {TodoListData} from "../examples/todo/data/todo";
+
 var expect = chai.expect;
 
 describe('h5-event', () => {
@@ -114,6 +117,17 @@ describe('h5-event', () => {
             payload.slice(0, 1);
             //}).to.throw(/Cannot add\/remove sealed array elements/);
             expect(payload, 'payload').to.deep.equal([1, 2]);
+            done();
+        });
+    });
+
+    it('todolist_was_changed', (done) => {
+        var payload: TodoListData = [{ id: 1, text: "todo 1", marked: false }];
+        todolist_was_changed.emit(payload);
+
+        todolist_was_changed.once((payload) => {
+            expect(payload[0].text).to.equal('todo 1');
+            expect(payload[0].marked).to.be.false;
             done();
         });
     });

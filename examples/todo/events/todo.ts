@@ -1,4 +1,4 @@
-import {createEvent} from "../../../lib/h5flux.d";
+import {createEvent} from "../../../lib/h5flux";
 import {TodoListData} from "../data/todo";
 
 export var todolist_was_changed =
