@@ -19,7 +19,6 @@
         "./data/todo.ts",
         "./events/todo.ts",
         "./schema/todoitem.ts",
-        "./stores/todoitem.ts",
         "./stores/todolist.ts"
     ]
 }

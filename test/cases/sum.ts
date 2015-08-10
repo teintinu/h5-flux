@@ -26,19 +26,3 @@ export var sumStore =
                 }
             }
         })
-// function createSumStore(initialState: number) {
-//     return createDisposable({
-//         ac_sum: ac_sum.addRef()
-//     }, (actions) => {
-//         var state = initialState;
-//         return {
-//             instance: {
-//                 sum: function(payload: number) {
-//                     actions.ac_sum.dispatch(state,payload);
-//                 }
-//             },
-//             destructor: () => { }
-//         }
-//     }
-//     );
-// }
