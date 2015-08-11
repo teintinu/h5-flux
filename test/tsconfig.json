@@ -8,11 +8,13 @@
         "sourceMap": true
     },
     "filesGlob": [
+        "../typings/react/react.d.ts",
         "../lib/*.ts",
         "../examples/**/*.ts",
         "./**/*.ts"
     ],
     "files": [
+        "../typings/react/react.d.ts",
         "../lib/h5flux.d.ts",
         "../examples/todo/actions/add_todo.ts",
         "../examples/todo/actions/clear_marked.ts",

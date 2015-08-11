@@ -15,7 +15,10 @@
     "mocha": "^2.2.5"
   },
   "scripts": {
-    "test": "mocha"
+    "clear": "rm -R *.js",
+    "test": "mocha",
+    "build": "tsc -p src ; tsc -p examples/todo ; tsc -p test",
+    "coverage": "npm run build ; mkdir coverage ; node_modules/mocha/bin/mocha --require blanket -R html-cov > coverage/coverage.html ; firefox ./coverage/coverage.html"
   },
   "repository": {
     "type": "git",
@@ -26,5 +29,11 @@
   "bugs": {
     "url": "https://github.com/thr0w/h5-flux/issues"
   },
-  "homepage": "https://github.com/thr0w/h5-flux"
+  "homepage": "https://github.com/thr0w/h5-flux",
+  "config": {
+      "blanket": {
+        "pattern": [ "" ],
+        "data-cover-never": [ "node_modules" ]
+      }
+    }
 }

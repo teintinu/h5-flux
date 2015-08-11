@@ -1,3 +1,4 @@
+import React = require("react");
 export declare function leaks(): number;
 export declare type EventEmmiter<PAYLOAD> = (payload: PAYLOAD) => void;
 export declare type EventListener<PAYLOAD> = (payload: PAYLOAD) => void;
@@ -55,6 +56,7 @@ export interface StoreOfState<STATE> extends StoreRef {
     };
 }
 export declare function defineStore<STATE, T extends Reference, ACTIONS extends Object>(initialState: STATE, actions: () => ACTIONS, catches: Event<STATE>[]): Disposable<StoreOfState<STATE> & ACTIONS>;
+export declare function declareView<STATE extends Object, PROPS extends Object, PRIVATE_METHODS extends Object, PUBLIC_METHODS extends Object>(getPropDefaults: () => PROPS, render: (view: STATE | PROPS | PRIVATE_METHODS | PUBLIC_METHODS) => JSX.Element, getInitialState?: () => STATE, private_methods?: PRIVATE_METHODS, public_methods?: PUBLIC_METHODS): React.ClassicComponentClass<PROPS>;
 export declare type I18N = string;
 export declare type Validation<T> = (value: T) => I18N;
 export declare enum FieldType {
