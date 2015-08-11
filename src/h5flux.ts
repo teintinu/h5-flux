@@ -158,7 +158,10 @@ export interface ActionDefinition<STATE, PAYLOAD> {
     notify: Event<STATE>[]
 }
 
-export interface ActionReference<STATE, PAYLOAD> extends Reference {
+export interface ActionRef extends Reference {
+}
+
+export interface ActionReference<STATE, PAYLOAD> extends ActionRef {
     dispatch(state: STATE, payload: PAYLOAD): void;
 }
 
@@ -225,7 +228,10 @@ export function defineAction<STATE, PAYLOAD>(action: ActionDefinition<STATE, PAY
 
 }
 
-export interface Store<STATE> extends Reference {
+export interface StoreRef extends Reference {
+}
+
+export interface StoreOfState<STATE> extends StoreRef {
     getState(): STATE;
     changed: {
         on: EventToggle<STATE>,
@@ -254,7 +260,7 @@ export function defineStore<STATE, T extends Reference, ACTIONS extends Object>(
                     registered_actions.push(ref);
                     inst[key] = (payload: any) => ref.dispatch(state, payload)
                 });
-            type INSTANCE = Store<STATE> & ACTIONS;
+            type INSTANCE = StoreOfState<STATE> & ACTIONS;
             (<INSTANCE>inst).getState = () => state;
             (<INSTANCE>inst).changed = {
                 on: add_listenner,

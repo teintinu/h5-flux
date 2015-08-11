@@ -32,7 +32,9 @@ export interface ActionDefinition<STATE, PAYLOAD> {
     reduce(state: STATE, payload: PAYLOAD): STATE;
     notify: Event<STATE>[];
 }
-export interface ActionReference<STATE, PAYLOAD> extends Reference {
+export interface ActionRef extends Reference {
+}
+export interface ActionReference<STATE, PAYLOAD> extends ActionRef {
     dispatch(state: STATE, payload: PAYLOAD): void;
 }
 export interface ActionDefined<STATE, PAYLOAD> extends Disposable<ActionReference<STATE, PAYLOAD>> {
@@ -43,14 +45,16 @@ export declare enum ActionStep {
     notify = 1,
 }
 export declare function defineAction<STATE, PAYLOAD>(action: ActionDefinition<STATE, PAYLOAD>): ActionDefined<STATE, PAYLOAD>;
-export interface Store<STATE> extends Reference {
+export interface StoreRef extends Reference {
+}
+export interface StoreOfState<STATE> extends StoreRef {
     getState(): STATE;
     changed: {
         on: EventToggle<STATE>;
         off: EventToggle<STATE>;
     };
 }
-export declare function defineStore<STATE, T extends Reference, ACTIONS extends Object>(initialState: STATE, actions: () => ACTIONS, catches: Event<STATE>[]): Disposable<Store<STATE> & ACTIONS>;
+export declare function defineStore<STATE, T extends Reference, ACTIONS extends Object>(initialState: STATE, actions: () => ACTIONS, catches: Event<STATE>[]): Disposable<StoreOfState<STATE> & ACTIONS>;
 export declare type I18N = string;
 export declare type Validation<T> = (value: T) => I18N;
 export declare enum FieldType {
