@@ -2,21 +2,21 @@
 /// <reference path="../typings/chai/chai.d.ts" />
 
 import chai = require('chai');
-import {asap, leaks} from "../lib/h5flux";
+import {asap, leaks, Disposable, ActionReference} from "../lib/h5flux";
 import {ac_sum, ev_sum_result} from "./cases/sum";
 import {todolist_was_changed} from "../examples/todo/events/todo";
 import {TodoListData} from "../examples/todo/data/todo";
-import {loadTodos, TodoListSampleData} from "../examples/todo/actions/load_todos";
-import {addTodo} from "../examples/todo/actions/add_todo";
-import {deleteTodo} from "../examples/todo/actions/delete_todo";
-import {editTodo} from "../examples/todo/actions/edit_todo";
-import {markTodo} from "../examples/todo/actions/mark_todo";
-import {markAll} from "../examples/todo/actions/mark_all";
-import {clearMarked} from "../examples/todo/actions/clear_marked";
+import {LoadTodos, TodoListSampleData} from "../examples/todo/actions/load_todos";
+import {AddTodo} from "../examples/todo/actions/add_todo";
+import {DeleteTodo} from "../examples/todo/actions/delete_todo";
+import {EditTodo} from "../examples/todo/actions/edit_todo";
+import {MarkTodo} from "../examples/todo/actions/mark_todo";
+import {MarkAll} from "../examples/todo/actions/mark_all";
+import {ClearMarked} from "../examples/todo/actions/clear_marked";
 
 var expect = chai.expect;
 
-describe('h5-actions', () => {
+describe('actions', () => {
 
     beforeEach(function(done) {
         asap(() => {
@@ -42,8 +42,20 @@ describe('h5-actions', () => {
         })
     });
 
+    it('sum 1 + 2 (register)', (done) => {
+        var action: any = ac_sum.register;
+        var ref_sum = action.addRef() as ActionReference<number,number>;
+        ref_sum.dispatch(1, 2);
+        ev_sum_result.once((res) => {
+            expect(res).to.equals(3);
+            ref_sum.releaseRef();
+            done();
+        })
+    });
+
+
     it('loadTodos', (done) => {
-        var ref = loadTodos.addRef();
+        var ref = LoadTodos.addRef();
         ref.dispatch([], null);
         todolist_was_changed.once((todos) => {
             expect(todos).to.deep.equal(TodoListSampleData);
@@ -53,7 +65,7 @@ describe('h5-actions', () => {
     });
 
     it('addTodo', (done) => {
-        var ref = addTodo.addRef();
+        var ref = AddTodo.addRef();
         ref.dispatch([], 'todo 1');
         todolist_was_changed.once((todos) => {
             expect(todos.length).to.equal(1);
@@ -65,7 +77,7 @@ describe('h5-actions', () => {
     });
 
     it('deleteTodo', (done) => {
-        var ref = deleteTodo.addRef();
+        var ref = DeleteTodo.addRef();
         ref.dispatch(TodoListSampleData, 2);
         todolist_was_changed.once((todos) => {
             expect(todos.length, 'len').to.equal(TodoListSampleData.length - 1);
@@ -77,9 +89,9 @@ describe('h5-actions', () => {
     });
 
     it('editTodo', (done) => {
-        var ref = editTodo.addRef();
+        var ref = EditTodo.addRef();
         var old_text = TodoListSampleData[1].text;
-        ref.dispatch(TodoListSampleData, { id: 2, text: 'new task 2' });
+        ref.dispatch(TodoListSampleData, [ 2,  'new task 2' ]);
         todolist_was_changed.once((todos) => {
             expect(todos.length).to.deep.equal(TodoListSampleData.length);
             expect(todos[0]).to.deep.equal(TodoListSampleData[0]);
@@ -94,7 +106,7 @@ describe('h5-actions', () => {
     });
 
     it('markTodo', (done) => {
-        var ref = markTodo.addRef();
+        var ref = MarkTodo.addRef();
         ref.dispatch(TodoListSampleData, 1);
         todolist_was_changed.once((todos) => {
             expect(todos.length).to.deep.equal(TodoListSampleData.length);
@@ -111,14 +123,14 @@ describe('h5-actions', () => {
 
 
     it('markAll', (done) => {
-        var ref = markAll.addRef();
+        var ref = MarkAll.addRef();
         ref.dispatch(TodoListSampleData, null);
-        todolist_was_changed.once((todos) => {
-            expect(todos.length).to.deep.equal(TodoListSampleData.length);
-            var all_is_marked = todos.every((t) => t.marked);
+        todolist_was_changed.once((todos1) => {
+            expect(todos1.length).to.deep.equal(TodoListSampleData.length);
+            var all_is_marked = todos1.every((t) => t.marked);
             expect(all_is_marked, 'all_is_marked').to.be.true;
 
-            ref.dispatch(todos, null);
+            ref.dispatch(todos1, null);
             todolist_was_changed.once((todos2) => {
                 var none_is_marked = todos2.every((t) => !t.marked);
                   expect(none_is_marked, 'none_is_marked').to.be.true;
@@ -130,7 +142,7 @@ describe('h5-actions', () => {
     });
 
     it('clearMarked', (done) => {
-        var ref = clearMarked.addRef();
+        var ref = ClearMarked.addRef();
         ref.dispatch(TodoListSampleData, null);
         todolist_was_changed.once((todos) => {
             expect(todos.length, 'len').to.equal(TodoListSampleData.length - 1);

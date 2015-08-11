@@ -1,9 +1,9 @@
-import {createAction} from "../../../lib/h5flux";
+import {defineAction} from "../../../lib/h5flux";
 
 import {TodoListData, TodoItemData} from "../data/todo";
 import {todolist_was_changed} from "../events/todo";
 
-export var loadTodos = createAction({
+export var LoadTodos = defineAction({
     name: "LOAD_TODOS",
     reduce: function(state: TodoListData) {
         return TodoListSampleData;

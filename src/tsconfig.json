@@ -12,9 +12,11 @@
     "buildOnSave": true,
     "compileOnSave": true,
     "filesGlob": [
+        "../typings/react/react.d.ts",
         "./**/*.ts"
     ],
     "files": [
+        "../typings/react/react.d.ts",
         "./h5flux.ts"
     ]
 }

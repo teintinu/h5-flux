@@ -10,7 +10,7 @@ export interface Event<PAYLOAD> {
     off: EventToggle<PAYLOAD>;
 }
 export declare function asap(fn: () => void): void;
-export declare function createEvent<PAYLOAD>(name: string): Event<PAYLOAD>;
+export declare function defineEvent<PAYLOAD>(name: string): Event<PAYLOAD>;
 export interface Reference extends Object {
     releaseRef?: () => void;
 }
@@ -18,15 +18,15 @@ export interface Disposable<T extends Reference> {
     addRef(): T;
     refCount(): number;
 }
-export declare type DisposableCreatorReturn<T extends Reference> = {
+export interface DisposableCreatorReturn<T extends Reference> {
     instance: T;
-    destructor: () => void;
-};
+    destructor(): void;
+}
 export interface DisposableChildren {
     [name: string]: Reference;
 }
 export declare type DisposableCreator<T extends Reference, CHILDREN extends DisposableChildren> = (children: CHILDREN) => DisposableCreatorReturn<T>;
-export declare function createDisposable<T extends Reference, CHILDREN extends DisposableChildren>(getChildren: () => CHILDREN, creator: DisposableCreator<T, CHILDREN>): Disposable<T>;
+export declare function defineDisposable<T extends Reference, CHILDREN extends DisposableChildren>(getChildren: () => CHILDREN, creator: DisposableCreator<T, CHILDREN>): Disposable<T>;
 export interface ActionDefinition<STATE, PAYLOAD> {
     name: string;
     reduce(state: STATE, payload: PAYLOAD): STATE;
@@ -35,13 +35,14 @@ export interface ActionDefinition<STATE, PAYLOAD> {
 export interface ActionReference<STATE, PAYLOAD> extends Reference {
     dispatch(state: STATE, payload: PAYLOAD): void;
 }
-export interface ActionInstance<STATE, PAYLOAD> extends Disposable<ActionReference<STATE, PAYLOAD>> {
+export interface ActionDefined<STATE, PAYLOAD> extends Disposable<ActionReference<STATE, PAYLOAD>> {
+    register: ((payload: PAYLOAD) => void);
 }
 export declare enum ActionStep {
     reduce = 0,
     notify = 1,
 }
-export declare function createAction<STATE, PAYLOAD>(action: ActionDefinition<STATE, PAYLOAD>): ActionInstance<STATE, PAYLOAD>;
+export declare function defineAction<STATE, PAYLOAD>(action: ActionDefinition<STATE, PAYLOAD>): ActionDefined<STATE, PAYLOAD>;
 export interface Store<STATE> extends Reference {
     getState(): STATE;
     changed: {
@@ -49,7 +50,7 @@ export interface Store<STATE> extends Reference {
         off: EventToggle<STATE>;
     };
 }
-export declare function createStore<STATE, T extends Reference, ACTIONS extends DisposableChildren>(initialState: STATE, actions: () => ACTIONS, catches: Event<STATE>[], createInstance: (state: STATE, action: ACTIONS) => T): Disposable<Store<STATE> & T>;
+export declare function defineStore<STATE, T extends Reference, ACTIONS extends Object>(initialState: STATE, actions: () => ACTIONS, catches: Event<STATE>[]): Disposable<Store<STATE> & ACTIONS>;
 export declare type I18N = string;
 export declare type Validation<T> = (value: T) => I18N;
 export declare enum FieldType {
@@ -68,7 +69,7 @@ export interface Field<T> {
     validate(value: T): I18N;
     required: boolean;
 }
-export declare function createField<T>(name: string, labels: FieldLabels, fieldType: FieldType, toText: (value: T) => string, fromText: (text: string) => T, required: boolean, validations?: Validation<T>[]): Field<T>;
-export declare function createFieldString(name: string, labels: FieldLabels, required: boolean, min?: number, max?: number, validations?: Validation<string>[]): Field<string>;
-export declare function createFieldNumber(name: string, labels: FieldLabels, decimals: number, required: boolean, min?: number, max?: number, validations?: Validation<number>[]): Field<number>;
+export declare function defineField<T>(name: string, labels: FieldLabels, fieldType: FieldType, toText: (value: T) => string, fromText: (text: string) => T, required: boolean, validations?: Validation<T>[]): Field<T>;
+export declare function defineFieldString(name: string, labels: FieldLabels, required: boolean, min?: number, max?: number, validations?: Validation<string>[]): Field<string>;
+export declare function defineFieldNumber(name: string, labels: FieldLabels, decimals: number, required: boolean, min?: number, max?: number, validations?: Validation<number>[]): Field<number>;
 export declare function createFieldBoolean(name: string, labels: FieldLabels, required: boolean, validations?: Validation<boolean>[]): Field<boolean>;

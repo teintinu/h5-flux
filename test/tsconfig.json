@@ -24,7 +24,7 @@
         "../examples/todo/data/todo.ts",
         "../examples/todo/events/todo.ts",
         "../examples/todo/schema/todoitem.ts",
-        "../examples/todo/stores/todolist.ts",
+        "../examples/todo/stores/todo.ts",
         "./cases/sum.ts",
         "./h5actions.ts",
         "./h5disposable.ts",

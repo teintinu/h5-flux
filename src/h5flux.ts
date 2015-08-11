@@ -1,3 +1,6 @@
+
+import React = require("react");
+
 var _leaks = 0;
 
 export function leaks() {
@@ -28,7 +31,7 @@ export function asap(fn: () => void) {
         setTimeout(fn, 0)
 }
 
-export function createEvent<PAYLOAD>(name: string): Event<PAYLOAD> {
+export function defineEvent<PAYLOAD>(name: string): Event<PAYLOAD> {
 
     // interface IndexedListenners  {
     //   [key: KEY]: EventListenner<KEY, PAYLOAD>;
@@ -45,8 +48,8 @@ export function createEvent<PAYLOAD>(name: string): Event<PAYLOAD> {
         off
     }
 
-    if (eventCreated)
-        eventCreated.emit({ name, event });
+    if (eventDefined)
+        eventDefined.emit({ name, event });
 
     return event;
 
@@ -84,9 +87,9 @@ export function createEvent<PAYLOAD>(name: string): Event<PAYLOAD> {
     }
 }
 
-var eventCreated = createEvent
+var eventDefined = defineEvent
     <{ name: string, event: Event<any> }>
-    ('h5-flux-eventCreated');
+    ('h5-flux-eventDefined');
 
 export interface Reference extends Object {
     releaseRef?: () => void;
@@ -97,9 +100,9 @@ export interface Disposable<T extends Reference> {
     refCount(): number;
 }
 
-export type DisposableCreatorReturn<T extends Reference> = {
+export interface DisposableCreatorReturn<T extends Reference> {
     instance: T,
-    destructor: () => void
+    destructor(): void
 }
 
 export interface DisposableChildren {
@@ -108,7 +111,7 @@ export interface DisposableChildren {
 
 export type DisposableCreator<T extends Reference, CHILDREN extends DisposableChildren> = (children: CHILDREN) => DisposableCreatorReturn<T>;
 
-export function createDisposable<T extends Reference, CHILDREN extends DisposableChildren>(
+export function defineDisposable<T extends Reference, CHILDREN extends DisposableChildren>(
     getChildren: () => CHILDREN, creator: DisposableCreator<T, CHILDREN>
 ): Disposable<T> {
     var object: DisposableCreatorReturn<T>;
@@ -159,12 +162,13 @@ export interface ActionReference<STATE, PAYLOAD> extends Reference {
     dispatch(state: STATE, payload: PAYLOAD): void;
 }
 
-export interface ActionInstance<STATE, PAYLOAD> extends Disposable<ActionReference<STATE, PAYLOAD>> {
+export interface ActionDefined<STATE, PAYLOAD> extends Disposable<ActionReference<STATE, PAYLOAD>> {
+    register: ((payload: PAYLOAD) => void)
 }
 
 export enum ActionStep { reduce, notify };
 
-export function createAction<STATE, PAYLOAD>(action: ActionDefinition<STATE, PAYLOAD>): ActionInstance<STATE, PAYLOAD> {
+export function defineAction<STATE, PAYLOAD>(action: ActionDefinition<STATE, PAYLOAD>) {
 
     interface EV_PAYLOAD {
         step: ActionStep,
@@ -172,11 +176,17 @@ export function createAction<STATE, PAYLOAD>(action: ActionDefinition<STATE, PAY
         payload: PAYLOAD
     }
 
-    return createDisposable(null, createInstance);
+    var action_disp = defineDisposable(null, createInstance) as ActionDefined<STATE, PAYLOAD>;
+    Object.defineProperty(action_disp, 'register', {
+        get: function() {
+            return (action_disp as any) as (payload: PAYLOAD) => void;
+        }
+    });
+    return action_disp;
 
     function createInstance(): DisposableCreatorReturn<ActionReference<STATE, PAYLOAD>> {
 
-        var action_event = createEvent<EV_PAYLOAD>(action.name);
+        var action_event = defineEvent<EV_PAYLOAD>(action.name);
 
         action_event.on(catch_action_events);
 
@@ -223,24 +233,38 @@ export interface Store<STATE> extends Reference {
     }
 }
 
-export function createStore<STATE, T extends Reference, ACTIONS extends DisposableChildren>(
-    initialState: STATE, actions: ()=>ACTIONS, catches: Event<STATE>[], createInstance: (state: STATE, action: ACTIONS) => T) {
-    return createDisposable(actions, (actions) => {
+export function defineStore<STATE, T extends Reference, ACTIONS extends Object>(
+    initialState: STATE, actions: () => ACTIONS, catches: Event<STATE>[]) {
+    return defineDisposable(null, (c: DisposableChildren) => {
         var state: STATE = initialState;
         var listenners: EventListener<STATE>[] = [];
-        var instance = createInstance(state, actions);
-        type INSTANCE = Store<STATE> & typeof instance;
-        (<INSTANCE>instance).getState = () => state;
-        (<INSTANCE>instance).changed = {
-            on: add_listenner,
-            off: remove_listenner,
-        }
+        var registered_actions: Reference[] = [];
+        var instance = createInstance();
         catches.forEach((e) => e.on(changed));
         return {
-            instance: (<INSTANCE>instance),
-            destructor: () => {
-                catches.forEach((e) => e.off(changed));
+            instance,
+            destructor
+        }
+        function createInstance() {
+            var inst: any = {};
+            var actions_created = actions();
+            Object.keys(actions_created).forEach(
+                (key: string) => {
+                    var ref = (<any>actions_created)[key].addRef() as ActionReference<STATE, any>;
+                    registered_actions.push(ref);
+                    inst[key] = (payload: any) => ref.dispatch(state, payload)
+                });
+            type INSTANCE = Store<STATE> & ACTIONS;
+            (<INSTANCE>inst).getState = () => state;
+            (<INSTANCE>inst).changed = {
+                on: add_listenner,
+                off: remove_listenner,
             }
+            return <INSTANCE>inst;
+        }
+        function destructor() {
+            catches.forEach((e) => e.off(changed));
+            registered_actions.forEach((a) => a.releaseRef());
         }
         function add_listenner(l: EventListener<STATE>) {
             if (listenners.indexOf(l) == -1)
@@ -275,7 +299,7 @@ export interface Field<T> {
     required: boolean
 }
 
-export function createField<T>(name: string, labels: FieldLabels, fieldType: FieldType, toText: (value: T) => string, fromText: (text: string) => T, required: boolean, validations?: Validation<T>[]): Field<T> {
+export function defineField<T>(name: string, labels: FieldLabels, fieldType: FieldType, toText: (value: T) => string, fromText: (text: string) => T, required: boolean, validations?: Validation<T>[]): Field<T> {
     return {
         name,
         labels,
@@ -297,7 +321,7 @@ export function createField<T>(name: string, labels: FieldLabels, fieldType: Fie
     }
 }
 
-export function createFieldString(name: string, labels: FieldLabels, required: boolean, min?: number, max?: number, validations?: Validation<string>[]) {
+export function defineFieldString(name: string, labels: FieldLabels, required: boolean, min?: number, max?: number, validations?: Validation<string>[]) {
     validations = validations || [];
     if (min)
         validations.unshift(
@@ -313,11 +337,11 @@ export function createFieldString(name: string, labels: FieldLabels, required: b
                     return "Preenchimento máximo de " + max + " caracteres";
             }
         )
-    return createField(name, labels, FieldType.String, (v: string) => v, (v: string) => v, required, validations);
+    return defineField(name, labels, FieldType.String, (v: string) => v, (v: string) => v, required, validations);
 }
 
 
-export function createFieldNumber(name: string, labels: FieldLabels, decimals: number, required: boolean, min?: number, max?: number, validations?: Validation<number>[]) {
+export function defineFieldNumber(name: string, labels: FieldLabels, decimals: number, required: boolean, min?: number, max?: number, validations?: Validation<number>[]) {
     validations = validations || [];
     if (min)
         validations.unshift(
@@ -333,7 +357,7 @@ export function createFieldNumber(name: string, labels: FieldLabels, decimals: n
                     return "O máximo é " + toText(max);
             }
         )
-    return createField(name, labels, FieldType.Number, toText, fromText, required, validations);
+    return defineField(name, labels, FieldType.Number, toText, fromText, required, validations);
 
     function toText(value: number): string {
         if (!value)
@@ -351,7 +375,7 @@ export function createFieldNumber(name: string, labels: FieldLabels, decimals: n
 
 export function createFieldBoolean(name: string, labels: FieldLabels, required: boolean, validations?: Validation<boolean>[]) {
     validations = validations || [];
-    return createField(name, labels, FieldType.Number, toText, fromText, required, validations);
+    return defineField(name, labels, FieldType.Number, toText, fromText, required, validations);
 
     function toText(value: boolean): string {
         if (value === true)

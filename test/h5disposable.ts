@@ -2,7 +2,7 @@
 /// <reference path="../typings/chai/chai.d.ts" />
 
 import chai = require('chai');
-import {asap, leaks, createDisposable, Disposable, Reference} from "../lib/h5flux";
+import {asap, leaks, defineDisposable, Disposable, Reference} from "../lib/h5flux";
 var expect = chai.expect;
 
 describe('disposable', () => {
@@ -30,7 +30,7 @@ describe('disposable', () => {
 
         var count = 0;
 
-        var disposable = createDisposable(null, creator);
+        var disposable = defineDisposable(null, creator);
         expect(count, 'count').to.deep.equal(0);
         expect(disposable.refCount(), 'refcount').to.deep.equal(0);
 
@@ -62,7 +62,7 @@ describe('disposable', () => {
 
         var count = 0;
 
-        var disposable = createDisposable(null, creator);
+        var disposable = defineDisposable(null, creator);
         expect(count, 'coun1t').to.deep.equal(0);
         expect(disposable.refCount(), 'refcount1').to.deep.equal(0);
 
@@ -98,7 +98,7 @@ describe('disposable', () => {
 
         var count = 0;
 
-        var disposable = createDisposable(null, creator);
+        var disposable = defineDisposable(null, creator);
         expect(count, 'count1').to.deep.equal(0);
         expect(disposable.refCount(), 'refcount1').to.deep.equal(0);
 
@@ -148,7 +148,7 @@ describe('disposable', () => {
 
         var count = 0;
 
-        var chield1 = createDisposable(null, function(children) {
+        var chield1 = defineDisposable(null, function(children) {
             count++;
             return {
                 instance: <Data>{ x: count * 100 },
@@ -165,7 +165,7 @@ describe('disposable', () => {
         expect(chield1_ref.x).to.deep.equal(100);
         chield1_ref.x = 111;
 
-        var chield2 = createDisposable(null, function(children) {
+        var chield2 = defineDisposable(null, function(children) {
             count++;
             return {
                 instance: <Data>{ x: count * 100 },
@@ -182,7 +182,7 @@ describe('disposable', () => {
         expect(chield2_ref.x).to.deep.equal(200);
         chield2_ref.x = 222;
 
-        var parent = createDisposable(
+        var parent = defineDisposable(
             function() {
                 return { a: chield1_ref, b: chield2_ref }
             }, function(children) {

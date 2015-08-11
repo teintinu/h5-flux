@@ -2,13 +2,13 @@
 /// <reference path="../typings/chai/chai.d.ts" />
 
 import chai = require('chai');
-import {asap, leaks, createEvent} from "../lib/h5flux";
+import {asap, leaks, defineEvent} from "../lib/h5flux";
 import {todolist_was_changed} from "../examples/todo/events/todo";
 import {TodoListData} from "../examples/todo/data/todo";
 
 var expect = chai.expect;
 
-describe('h5-event', () => {
+describe('events', () => {
 
     beforeEach(function(done) {
         asap(() => {
@@ -25,7 +25,7 @@ describe('h5-event', () => {
     });
 
     it('emit/listen', (done) => {
-        var e = createEvent<number>("e");
+        var e = defineEvent<number>("e");
         e.emit(1);
         e.on((payload) => {
             expect(payload, 'payload').to.equals(1);
@@ -35,7 +35,7 @@ describe('h5-event', () => {
 
     it('emit/listen once', (done) => {
         var count = 0;
-        var e = createEvent<number>("e")
+        var e = defineEvent<number>("e")
         e.emit(10);
         e.emit(20);
         e.once((payload) => {
@@ -54,7 +54,7 @@ describe('h5-event', () => {
 
     it('emit/listen many', (done) => {
         var count = 0;
-        var e = createEvent<number>("e")
+        var e = defineEvent<number>("e")
         e.emit(10);
         e.emit(20);
         e.on((payload) => {
@@ -72,7 +72,7 @@ describe('h5-event', () => {
     });
 
     it('emit/unlisten', (done) => {
-        var e = createEvent<number>("e")
+        var e = defineEvent<number>("e")
         var fn = (payload: number) => {
             expect(payload, 'payload').to.equals(1);
             e.emit(2);
@@ -90,7 +90,7 @@ describe('h5-event', () => {
             value: number,
             sub: { value: number }
         }
-        var e = createEvent<Sample>("e")
+        var e = defineEvent<Sample>("e")
         e.emit({ value: 1, sub: { value: 2 } });
         e.on((payload) => {
             expect(payload.value, 'payload').to.equals(1);
@@ -106,7 +106,7 @@ describe('h5-event', () => {
     });
 
     it('payload must be an immutable array', (done) => {
-        var e = createEvent<number[]>("e")
+        var e = defineEvent<number[]>("e")
         e.emit([1, 2]);
         e.on((payload) => {
             expect(payload, 'payload').to.deep.equal([1, 2]);

@@ -6,14 +6,21 @@
         "removeComments": true,
         "preserveConstEnums": true,
         "sourceMap": true,
-        "declaration": false
+        "declaration": false,
+        "jsx": "react"
     },
     "filesGlob": [
         "../../lib/*.ts",
-        "./**/*.ts"
+        "../../typings/**/*.ts",
+        "./**/*.ts",
+        "./**/*.tsx"
     ],
     "files": [
         "../../lib/h5flux.d.ts",
+        "../../typings/chai/chai.d.ts",
+        "../../typings/mocha/mocha.d.ts",
+        "../../typings/react/react.d.ts",
+        "../../typings/tsd.d.ts",
         "./actions/add_todo.ts",
         "./actions/clear_marked.ts",
         "./actions/delete_todo.ts",
@@ -24,6 +31,7 @@
         "./data/todo.ts",
         "./events/todo.ts",
         "./schema/todoitem.ts",
-        "./stores/todolist.ts"
+        "./stores/todo.ts",
+        "./views/header.tsx"
     ]
 }

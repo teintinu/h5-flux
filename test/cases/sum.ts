@@ -1,7 +1,7 @@
-import {createAction, createEvent, createStore} from "../../lib/h5flux";
+import {defineAction, defineEvent, defineStore} from "../../lib/h5flux";
 
-export var ev_sum_result = createEvent<number>("sum-result")
-export var ac_sum = createAction({
+export var ev_sum_result = defineEvent<number>("sum-result")
+export var ac_sum = defineAction({
     name: "sum",
     reduce: function(state: number, amount: number) {
         return state + amount;
@@ -11,18 +11,10 @@ export var ac_sum = createAction({
     ]
 });
 
-export var sumStore =
-    createStore(0,
-        function() {
-            return {
-                ac_sum: ac_sum.addRef()
-            }
-        },
-        [ev_sum_result],
-        function(state, actions) {
-            return {
-                sum: function(payload: number) {
-                    actions.ac_sum.dispatch(state, payload);
-                }
-            }
-        })
+export var SumStore =
+    defineStore(0,
+        ()=>({
+            sum: ac_sum.register
+        }),
+        [ev_sum_result]
+    )
