@@ -10,16 +10,25 @@ import {TodoListData, TodoItemData} from "../data/todo";
 import {todolist_was_changed} from "../events/todo";
 
 export var TodoStore = defineStore(TodoListSampleData,
-    ()=> ({
+    () => ({
         loadTodos: LoadTodos.register,
         addTodo: AddTodo.register,
         deleteTodo: DeleteTodo.register,
         editTodo: EditTodo.register,
         markTodo: MarkTodo.register,
         markAll: MarkAll.register,
-        clearMarked: ClearMarked.register,        
+        clearMarked: ClearMarked.register,
     }),
     [
         todolist_was_changed
     ]
+    // ,
+    // {
+    //     filterMarkeds: (state: TodoListData) => {
+    //         return state.filter((item) => item.marked);
+    //     },
+    //     filterUnmarkeds: (state: TodoListData) => {
+    //         return state.filter((item) => !item.marked);
+    //     }
+    // }
 )

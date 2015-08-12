@@ -32,6 +32,8 @@
         "./events/todo.ts",
         "./schema/todoitem.ts",
         "./stores/todo.ts",
-        "./views/header.tsx"
+        "./views/footer.tsx",
+        "./views/header.tsx",
+        "./views/todotextinput.tsx"
     ]
 }

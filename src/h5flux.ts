@@ -96,7 +96,7 @@ export interface Reference extends Object {
 }
 
 export interface Disposable<T extends Reference> {
-    addRef(): T;
+    addRef(writable?: boolean): T;
     refCount(): number;
 }
 
@@ -120,35 +120,53 @@ export function defineDisposable<T extends Reference, CHILDREN extends Disposabl
     function refCount() {
         return (object && (<any>object).__refCount) || 0;
     }
-    function addRef(): T {
+    function addRef(writable?: boolean): T {
         if (!object) {
             _leaks++;
             if (getChildren)
                 children = getChildren();
             object = creator(children);
             (<any>object).__refCount = 0;
-            object.instance.releaseRef = releaseRef;
         }
         (<any>object).__refCount++;
-        function releaseRef() {
-            asap(() => {
-                if ((<any>object).__refCount <= 1) {
-                    if (children) {
-                        var keys = Object.keys(children);
-                        for (let i = 0; i < keys.length; i++) {
-                            children[keys[i]].releaseRef();
-                        }
+        return createRef();
+        function createRef() {
+            var _thisref:T;
+            var props: any = {};
+            Object.keys(object.instance).forEach((n: string) => {
+                props[n] = {
+                    get: function() {
+                        return (object.instance as any)[n];
                     }
-                    let destructor = (<any>object).destructor;
-                    object = undefined;
-                    destructor()
-                    _leaks--;
                 }
-                else
-                  (<any>object).__refCount--;
+                if (writable)
+                    props[n].set = function(value: any) {
+                        (object.instance as any)[n] = value;
+                    }
             });
+            props.releaseRef = {value: function() {
+                asap(() => {
+                    if(_thisref){
+                      _thisref=null;
+                    if ((<any>object).__refCount <= 1) {
+                        if (children) {
+                            var keys = Object.keys(children);
+                            for (let i = 0; i < keys.length; i++) {
+                                children[keys[i]].releaseRef();
+                            }
+                        }
+                        let destructor = (<any>object).destructor;
+                        object = undefined;
+                        destructor()
+                        _leaks--;
+                    }
+                    else
+                    (<any>object).__refCount--;
+                  }
+                });
+            }}
+            return _thisref=Object.create(null, props) as T;
         }
-        return object.instance;
     }
 }
 
@@ -239,8 +257,8 @@ export interface StoreOfState<STATE> extends StoreRef {
     }
 }
 
-export function defineStore<STATE, T extends Reference, ACTIONS extends Object>(
-    initialState: STATE, actions: () => ACTIONS, catches: Event<STATE>[]) {
+export function defineStore<STATE, T extends Reference, ACTIONS extends Object, QUERIES extends Object>(
+    initialState: STATE, actions: () => ACTIONS, catches: Event<STATE>[], queries?: QUERIES) {
     return defineDisposable(null, (c: DisposableChildren) => {
         var state: STATE = initialState;
         var listenners: EventListener<STATE>[] = [];
@@ -288,13 +306,12 @@ export function defineStore<STATE, T extends Reference, ACTIONS extends Object>(
     });
 }
 
-
 export function declareView<STATE extends Object, PROPS extends Object, PRIVATE_METHODS extends Object, PUBLIC_METHODS extends Object>(
     getPropDefaults: () => PROPS,
-    render: (view: STATE | PROPS | PRIVATE_METHODS | PUBLIC_METHODS) => JSX.Element,
-    getInitialState: () => STATE = null,
-    private_methods: PRIVATE_METHODS = null,
-    public_methods: PUBLIC_METHODS = null
+    getInitialState: () => STATE,
+    public_obj: (view: STATE & PROPS) => PUBLIC_METHODS,
+    private_obj: (view: STATE & PROPS & PUBLIC_METHODS) => PRIVATE_METHODS,
+    render: (view: STATE & PROPS & PRIVATE_METHODS & PUBLIC_METHODS) => JSX.Element
 ) {
 
     var component = {
@@ -309,6 +326,8 @@ export function declareView<STATE extends Object, PROPS extends Object, PRIVATE_
         }
     };
 
+    type VIEW_TYPE = STATE & PROPS & PRIVATE_METHODS & PUBLIC_METHODS;
+
     var clazz = React.createClass<PROPS, any>(component);
     return clazz;// as ((typeof clazz) | PUBLIC_METHODS);
 
@@ -317,7 +336,7 @@ export function declareView<STATE extends Object, PROPS extends Object, PRIVATE_
         (self.view_stores as InternalStore[]).forEach(
             i=> view[i.name] = i.ref.getState()
         );
-        return Object.freeze<STATE | PROPS | PRIVATE_METHODS | PUBLIC_METHODS>(view);
+        return Object.freeze<VIEW_TYPE>(view);
     }
 
     function create_view_instance(self: any) {
@@ -328,8 +347,10 @@ export function declareView<STATE extends Object, PROPS extends Object, PRIVATE_
         if (getInitialState)
             process_obj(getInitialState());
         process_obj(self.props, getPropDefaults);
-        process_method(private_methods);
-        process_method(public_methods);
+        if (private_obj)
+            process_method(private_obj(view as any as VIEW_TYPE));
+        if (public_obj)
+            process_method(public_obj(view as any as VIEW_TYPE));
 
         self.stores = stores;
         self.view = view;

@@ -54,7 +54,7 @@ describe('disposable', () => {
         }
     });
 
-    it('addRef/releaseRef', (done) => {
+    it('addRef/releaseRef - readonly', (done) => {
 
         interface Data extends Reference {
             x: number
@@ -70,6 +70,87 @@ describe('disposable', () => {
         expect(count, 'count2').to.deep.equal(1);
         expect(disposable.refCount(), 'refcount2').to.deep.equal(1);
         expect(ref1.x).to.deep.equal(100);
+        ref1.x = 101;
+        expect(ref1.x).to.deep.equal(100); // readonly
+        ref1.releaseRef();
+        asap(() => {
+            expect(count, 'count3').to.deep.equal(0);
+            expect(disposable.refCount(), 'refcount3').to.deep.equal(0);
+
+            done();
+        });
+        function creator() {
+            count++;
+            return {
+                instance: <Data>{ x: 100 },
+                destructor: () => {
+                    count--;
+                }
+            }
+        }
+
+    });
+
+
+    it('addRef/releaseRef - dispose twice', (done) => {
+
+        interface Data extends Reference {
+            x: number
+        }
+
+        var count = 0;
+
+        var disposable = defineDisposable(null, creator);
+        expect(count, 'coun1t').to.deep.equal(0);
+        expect(disposable.refCount(), 'refcount1').to.deep.equal(0);
+
+        var ref1 = disposable.addRef();
+        expect(count, 'count2').to.deep.equal(1);
+        expect(disposable.refCount(), 'refcount2').to.deep.equal(1);
+        expect(ref1.x).to.deep.equal(100);
+        ref1.releaseRef();
+        asap(() => {
+            expect(count, 'count3').to.deep.equal(0);
+            expect(disposable.refCount(), 'refcount3').to.deep.equal(0);
+
+            ref1.releaseRef(); // must do nothing
+
+            setTimeout(function() {
+                expect(count, 'count3').to.deep.equal(0);
+                expect(disposable.refCount(), 'refcount3').to.deep.equal(0);
+                done();
+            }, 2)
+        });
+        function creator() {
+            count++;
+            return {
+                instance: <Data>{ x: 100 },
+                destructor: () => {
+                    count--;
+                }
+            }
+        }
+
+    });
+
+    it('addRef/releaseRef - writable', (done) => {
+
+        interface Data extends Reference {
+            x: number
+        }
+
+        var count = 0;
+
+        var disposable = defineDisposable(null, creator);
+        expect(count, 'coun1t').to.deep.equal(0);
+        expect(disposable.refCount(), 'refcount1').to.deep.equal(0);
+
+        var ref1 = disposable.addRef(true);
+        expect(count, 'count2').to.deep.equal(1);
+        expect(disposable.refCount(), 'refcount2').to.deep.equal(1);
+        expect(ref1.x).to.deep.equal(100);
+        ref1.x = 101;
+        expect(ref1.x).to.deep.equal(101); // writable
 
         ref1.releaseRef();
         asap(() => {
@@ -107,7 +188,7 @@ describe('disposable', () => {
         expect(disposable.refCount(), 'refcount2').to.deep.equal(1);
         expect(ref1.x).to.deep.equal(100);
 
-        var ref2 = disposable.addRef();
+        var ref2 = disposable.addRef(true);
         expect(count, 'count3').to.deep.equal(1);
         expect(disposable.refCount(), 'refcount3').to.deep.equal(2);
         expect(ref2.x).to.deep.equal(100);
@@ -159,7 +240,7 @@ describe('disposable', () => {
         });
         expect(count, 'count-chield1').to.deep.equal(0);
         expect(chield1.refCount(), 'parent-refcount1').to.deep.equal(0);
-        var chield1_ref = chield1.addRef();
+        var chield1_ref = chield1.addRef(true);
         expect(count, 'count2-chield1').to.deep.equal(1);
         expect(chield1.refCount(), 'refcount2-chield1').to.deep.equal(1);
         expect(chield1_ref.x).to.deep.equal(100);
@@ -176,7 +257,7 @@ describe('disposable', () => {
         });
         expect(count, 'count-chield2').to.deep.equal(1);
         expect(chield2.refCount(), 'parent-refcount1').to.deep.equal(0);
-        var chield2_ref = chield2.addRef();
+        var chield2_ref = chield2.addRef(true);
         expect(count, 'count2-chield2').to.deep.equal(2);
         expect(chield2.refCount(), 'refcount2-chield1').to.deep.equal(1);
         expect(chield2_ref.x).to.deep.equal(200);
