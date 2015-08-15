@@ -21,14 +21,13 @@ export var TodoStore = defineStore(TodoListSampleData,
     }),
     [
         todolist_was_changed
-    ]
-    // ,
-    // {
-    //     filterMarkeds: (state: TodoListData) => {
-    //         return state.filter((item) => item.marked);
-    //     },
-    //     filterUnmarkeds: (state: TodoListData) => {
-    //         return state.filter((item) => !item.marked);
-    //     }
-    // }
+    ],
+    {
+        filterMarkeds: (state: TodoListData) => {
+            return state.filter((item) => item.marked);
+        },
+        filterUnmarkeds: (state: TodoListData) => {
+            return state.filter((item) => !item.marked);
+        }
+    }
 )

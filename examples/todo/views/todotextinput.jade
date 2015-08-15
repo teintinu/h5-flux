@@ -1,0 +1,41 @@
+script.
+  import {TodoStore} from "../stores/todo";
+  import {TodoListData, TodoItemData} from "../data/todo";
+  import {TodoTextInput} from "./todotextinput";
+//  import React = require("react");
+//  import {declareView} from "../../../lib/h5flux";
+
+reference(todo: TodoStore)
+property(placeholder: string)
+
+- var item: TodoItemData = {id: 0, text: '', marked: false}
+
+input(
+  class={
+      'edit': item.id > 0,
+      'new-todo': item.id == 0
+  }
+  type='text'
+  placeholder=placeholder
+  autoFocus=true
+  value=item.text
+  onChange = function(e) {
+      item.text = e.target.value.trim();
+  }
+  onBlur=function(e) {
+      item.text = e.target.value.trim();
+  }
+  onKeyDown = handleSubmit
+)
+script.
+ () => handleSubmit(e) {
+    if (e.which === 13) {
+        item.text = (e.target as any).value.trim();
+        if (view.id == 0)
+            todo.addTodo(text);
+        else
+            todo.editTodo([view.id, text]);
+        view.id = 0;
+        view.text = '';
+    }
+  }

@@ -96,6 +96,7 @@ export interface Reference extends Object {
 }
 
 export interface Disposable<T extends Reference> {
+    TYPE: T,
     addRef(writable?: boolean): T;
     refCount(): number;
 }
@@ -116,7 +117,7 @@ export function defineDisposable<T extends Reference, CHILDREN extends Disposabl
 ): Disposable<T> {
     var object: DisposableCreatorReturn<T>;
     var children: CHILDREN;
-    return { addRef, refCount };
+    return { TYPE: undefined as T, addRef, refCount };
     function refCount() {
         return (object && (<any>object).__refCount) || 0;
     }
@@ -131,7 +132,7 @@ export function defineDisposable<T extends Reference, CHILDREN extends Disposabl
         (<any>object).__refCount++;
         return createRef();
         function createRef() {
-            var _thisref:T;
+            var _thisref: T;
             var props: any = {};
             Object.keys(object.instance).forEach((n: string) => {
                 props[n] = {
@@ -144,28 +145,30 @@ export function defineDisposable<T extends Reference, CHILDREN extends Disposabl
                         (object.instance as any)[n] = value;
                     }
             });
-            props.releaseRef = {value: function() {
-                asap(() => {
-                    if(_thisref){
-                      _thisref=null;
-                    if ((<any>object).__refCount <= 1) {
-                        if (children) {
-                            var keys = Object.keys(children);
-                            for (let i = 0; i < keys.length; i++) {
-                                children[keys[i]].releaseRef();
+            props.releaseRef = {
+                value: function() {
+                    asap(() => {
+                        if (_thisref) {
+                            _thisref = null;
+                            if ((<any>object).__refCount <= 1) {
+                                if (children) {
+                                    var keys = Object.keys(children);
+                                    for (let i = 0; i < keys.length; i++) {
+                                        children[keys[i]].releaseRef();
+                                    }
+                                }
+                                let destructor = (<any>object).destructor;
+                                object = undefined;
+                                destructor()
+                                _leaks--;
                             }
-                        }
-                        let destructor = (<any>object).destructor;
-                        object = undefined;
-                        destructor()
-                        _leaks--;
-                    }
-                    else
+                            else
                     (<any>object).__refCount--;
-                  }
-                });
-            }}
-            return _thisref=Object.create(null, props) as T;
+                        }
+                    });
+                }
+            }
+            return _thisref = Object.create(null, props) as T;
         }
     }
 }
@@ -270,7 +273,7 @@ export function defineStore<STATE, T extends Reference, ACTIONS extends Object, 
             destructor
         }
         function createInstance() {
-            var inst: any = {};
+            var inst: any = queries || {};
             var actions_created = actions();
             Object.keys(actions_created).forEach(
                 (key: string) => {
@@ -278,7 +281,7 @@ export function defineStore<STATE, T extends Reference, ACTIONS extends Object, 
                     registered_actions.push(ref);
                     inst[key] = (payload: any) => ref.dispatch(state, payload)
                 });
-            type INSTANCE = StoreOfState<STATE> & ACTIONS;
+            type INSTANCE = StoreOfState<STATE> & ACTIONS & QUERIES;
             (<INSTANCE>inst).getState = () => state;
             (<INSTANCE>inst).changed = {
                 on: add_listenner,
@@ -309,8 +312,8 @@ export function defineStore<STATE, T extends Reference, ACTIONS extends Object, 
 export function declareView<STATE extends Object, PROPS extends Object, PRIVATE_METHODS extends Object, PUBLIC_METHODS extends Object>(
     getPropDefaults: () => PROPS,
     getInitialState: () => STATE,
-    public_obj: (view: STATE & PROPS) => PUBLIC_METHODS,
-    private_obj: (view: STATE & PROPS & PUBLIC_METHODS) => PRIVATE_METHODS,
+    public_obj: (view: STATE & PROPS & { setState: (view: STATE) => void }) => PUBLIC_METHODS,
+    private_obj: (view: STATE & PROPS & PUBLIC_METHODS& { setState: (view: STATE) => void }) => PRIVATE_METHODS,
     render: (view: STATE & PROPS & PRIVATE_METHODS & PUBLIC_METHODS) => JSX.Element
 ) {
 
@@ -326,7 +329,7 @@ export function declareView<STATE extends Object, PROPS extends Object, PRIVATE_
         }
     };
 
-    type VIEW_TYPE = STATE & PROPS & PRIVATE_METHODS & PUBLIC_METHODS;
+    type VIEW_TYPE = STATE & PROPS & PRIVATE_METHODS & PUBLIC_METHODS &  { setState: (view: STATE) => void };
 
     var clazz = React.createClass<PROPS, any>(component);
     return clazz;// as ((typeof clazz) | PUBLIC_METHODS);

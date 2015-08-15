@@ -22,6 +22,40 @@ describe('disposable', () => {
     });
 
 
+    it('TYPE assignment', (done) => {
+
+        interface Data extends Reference {
+            x: number
+        }
+
+        var count = 0;
+
+        var disposable = defineDisposable(null, creator);
+        var a : typeof disposable.TYPE;
+        var b : typeof disposable.TYPE;
+        a = {x:1, releaseRef: null};
+        b = a;
+        b.x++;
+        a = b;
+
+        expect(count, 'count').to.deep.equal(0);
+        expect(2, 'refcount').to.deep.equal(a.x);
+        expect(2, 'refcount').to.deep.equal(b.x);
+
+        done();
+
+
+        function creator() {
+            count++;
+            return {
+                instance: <Data>{ x: 100 },
+                destructor: () => {
+                    count--;
+                }
+            }
+        }
+    });
+
     it('addRef/leak', (done) => {
 
         interface Data extends Reference {
