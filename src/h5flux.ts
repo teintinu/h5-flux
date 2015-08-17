@@ -260,9 +260,75 @@ export interface StoreOfState<STATE> extends StoreRef {
     }
 }
 
+export function defineQuery<STATE, T extends Reference, REDUCED>(reduce: (item: STATE, query_string: string) => REDUCED) {
+    var store: Disposable<StoreOfState<STATE>>;
+    var qry = defineDisposable(null, (c: DisposableChildren) => {
+        var _storeref = store.addRef();
+        var _state: REDUCED;
+        var _query_string: string;
+        var listenners: EventListener<REDUCED>[] = [];
+        var must_reduce_it = true;
+        return {
+            instance: createInstance(),
+            destructor
+        }
+        function createInstance() {
+            _storeref.changed.on(changed);
+            reduce_it();
+            var inst = {
+                getStore: () => _storeref,
+                getState: () => _state,
+                query: (query_string: string) => {
+                    if (_query_string != query_string) {
+                        _query_string = query_string
+                        reduce_it();
+                    }
+                },
+                changed: {
+                    on: add_listenner,
+                    off: remove_listenner,
+                }
+            }
+            type INSTANCE = typeof inst & Reference;
+            return <INSTANCE>inst;
+        }
+
+        function destructor() {
+            _storeref.releaseRef();
+        }
+
+        function add_listenner(l: EventListener<REDUCED>) {
+            if (listenners.indexOf(l) == -1)
+                listenners.push(l);
+        }
+        function remove_listenner(l: EventListener<REDUCED>) {
+            var i = listenners.indexOf(l);
+            if (i >= 0)
+                listenners.splice(i, 1);
+        }
+        function changed(newState: STATE) {
+            reduce_it();
+        }
+        function reduce_it() {
+            asap(() => {
+                if (must_reduce_it) {
+                    _state = reduce(_storeref.getState(), _query_string);
+                    listenners.forEach((l) => asap(() => l(_state)))
+                    must_reduce_it = false;
+                    asap(() => {
+                      must_reduce_it = true;
+                    });
+                }
+            })
+        }
+    });
+    (qry as any).set_store = (s: any) => { store = s }
+    return qry;
+}
+
 export function defineStore<STATE, T extends Reference, ACTIONS extends Object, QUERIES extends Object>(
     initialState: STATE, actions: () => ACTIONS, catches: Event<STATE>[], queries?: QUERIES) {
-    return defineDisposable(null, (c: DisposableChildren) => {
+    var store = defineDisposable(null, (c: DisposableChildren) => {
         var state: STATE = initialState;
         var listenners: EventListener<STATE>[] = [];
         var registered_actions: Reference[] = [];
@@ -273,7 +339,7 @@ export function defineStore<STATE, T extends Reference, ACTIONS extends Object, 
             destructor
         }
         function createInstance() {
-            var inst: any = queries || {};
+            var inst: any = {};
             var actions_created = actions();
             Object.keys(actions_created).forEach(
                 (key: string) => {
@@ -281,7 +347,7 @@ export function defineStore<STATE, T extends Reference, ACTIONS extends Object, 
                     registered_actions.push(ref);
                     inst[key] = (payload: any) => ref.dispatch(state, payload)
                 });
-            type INSTANCE = StoreOfState<STATE> & ACTIONS & QUERIES;
+            type INSTANCE = StoreOfState<STATE> & ACTIONS;
             (<INSTANCE>inst).getState = () => state;
             (<INSTANCE>inst).changed = {
                 on: add_listenner,
@@ -307,6 +373,16 @@ export function defineStore<STATE, T extends Reference, ACTIONS extends Object, 
             listenners.forEach((l) => asap(() => l(newState)))
         }
     });
+
+    if (queries)
+        Object.keys(queries).forEach((q) => {
+            queries[(q as any)].set_store(store);
+        });
+    type STORE_WITH_QUERIES = typeof store & { query: typeof queries };
+
+    (store as STORE_WITH_QUERIES).query = queries;
+
+    return store as STORE_WITH_QUERIES;
 }
 
 export function declareView<STATE extends Object, PROPS extends Object, PRIVATE_METHODS extends Object, PUBLIC_METHODS extends Object>(

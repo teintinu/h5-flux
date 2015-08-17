@@ -16,14 +16,14 @@ describe('stores', () => {
         setTimeout(() => {
             expect(leaks(), 'before each leaks').to.be.equal(0);
             done();
-        },1)
+        }, 1)
     });
 
     afterEach(function(done) {
         setTimeout(() => {
             expect(leaks(), 'after each leaks').to.be.equal(0);
             done();
-        },1)
+        }, 1)
     });
 
 
@@ -160,4 +160,20 @@ describe('stores', () => {
             done();
         });
     });
+
+    it('filterTodo', (done) => {
+
+        var cont = 0;
+        var show_query = TodoStore.query.show.addRef();
+        show_query.query('unmarked')
+        show_query.changed.on((todos_filtered) => {
+                expect(todos_filtered.length, 'len-2').to.equal(TodoListSampleData.length - 1);
+                expect(todos_filtered[0], 'todos[0]').to.deep.equal(TodoListSampleData[0]);
+                expect(todos_filtered[1], 'todos[2]').to.deep.equal(TodoListSampleData[2]);
+                show_query.releaseRef();
+                done();
+        });
+    });
+
+
 });

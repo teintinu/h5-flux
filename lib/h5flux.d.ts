@@ -56,7 +56,18 @@ export interface StoreOfState<STATE> extends StoreRef {
         off: EventToggle<STATE>;
     };
 }
-export declare function defineStore<STATE, T extends Reference, ACTIONS extends Object, QUERIES extends Object>(initialState: STATE, actions: () => ACTIONS, catches: Event<STATE>[], queries?: QUERIES): Disposable<StoreOfState<STATE> & ACTIONS & QUERIES>;
+export declare function defineQuery<STATE, T extends Reference, REDUCED>(reduce: (item: STATE, query_string: string) => REDUCED): Disposable<{
+    getStore: () => StoreOfState<STATE>;
+    getState: () => REDUCED;
+    query: (query_string: string) => void;
+    changed: {
+        on: (l: (payload: REDUCED) => void) => void;
+        off: (l: (payload: REDUCED) => void) => void;
+    };
+} & Reference>;
+export declare function defineStore<STATE, T extends Reference, ACTIONS extends Object, QUERIES extends Object>(initialState: STATE, actions: () => ACTIONS, catches: Event<STATE>[], queries?: QUERIES): Disposable<StoreOfState<STATE> & ACTIONS> & {
+    query: QUERIES;
+};
 export declare function declareView<STATE extends Object, PROPS extends Object, PRIVATE_METHODS extends Object, PUBLIC_METHODS extends Object>(getPropDefaults: () => PROPS, getInitialState: () => STATE, public_obj: (view: STATE & PROPS & {
     setState: (view: STATE) => void;
 }) => PUBLIC_METHODS, private_obj: (view: STATE & PROPS & PUBLIC_METHODS & {
