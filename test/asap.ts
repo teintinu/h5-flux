@@ -35,5 +35,4 @@ describe('actions', () => {
         did.push(0);
         expect([0]).to.deep.equal(did);
     });
-
 });

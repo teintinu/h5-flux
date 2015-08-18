@@ -1,0 +1,29 @@
+script.
+  import {TodoStore} from "../stores/todo";
+  import {TodoListData, TodoItemData} from "../data/todo";
+  import {TodoTextInput} from "./todotextinput";
+//  import React = require("react");
+//  import {declareView} from "../../../lib/h5flux";
+
+property(lista: TodoListData)
+
+var editing: TodoItemData = {id: 0, text: '', marked: false};
+
+ul
+  each item in lista
+    li
+      if editing.id == item.id
+        TodoTextInput(item=editing, placeholder='What needs to be done?')
+        button(onClick=function(){
+          setState({editing: null})
+          }) Cancelar
+      else
+        input(
+          type="checkbox", 
+          onChange=function(){
+            todo.markTodo(item.id)
+          })
+        span(onDblClick=function(){
+            setState({editing: item})
+          })= item.text
+      

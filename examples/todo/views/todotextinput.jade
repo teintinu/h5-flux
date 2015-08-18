@@ -7,8 +7,7 @@ script.
 
 reference(todo: TodoStore)
 property(placeholder: string)
-
-- var item: TodoItemData = {id: 0, text: '', marked: false}
+property(item: TodoItemData= {id: 0, text: '', marked: false})
 
 input(
   class={
@@ -19,23 +18,28 @@ input(
   placeholder=placeholder
   autoFocus=true
   value=item.text
-  onChange = function(e) {
-      item.text = e.target.value.trim();
+  onChange = function(e:any) {
+    this.setState( view: {
+      id: item.id;
+      text: e.target.value;
+    });      
   }
-  onBlur=function(e) {
+  onBlur=function(e:any) {
       item.text = e.target.value.trim();
   }
   onKeyDown = handleSubmit
 )
 script.
- () => handleSubmit(e) {
+  function handleSubmit(e:any) {
     if (e.which === 13) {
         item.text = (e.target as any).value.trim();
         if (view.id == 0)
             todo.addTodo(text);
         else
             todo.editTodo([view.id, text]);
-        view.id = 0;
-        view.text = '';
+        this.setState( view: {
+          id: 0;
+          text: '';
+        });
     }
   }

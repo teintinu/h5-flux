@@ -30,6 +30,7 @@
         "./actions/mark_todo.ts",
         "./data/todo.ts",
         "./events/todo.ts",
+        "./index.ts",
         "./schema/todoitem.ts",
         "./stores/todo.ts",
         "./views/footer.tsx"

@@ -1,0 +1,26 @@
+
+property(lista: TodoListData)
+
+footer
+  button(onClick=markAll) Mark all
+  button(onClick=clearMarked) clearMarked
+  select(onChange=filterTodo)
+    option Show All 
+    option(value="marked") Show marked
+    option(value="unmarked") Show unmarked
+script.
+  function markAll()
+  {
+    lista.getStore().markAll(void 0)
+  }  
+    
+  function clearMarked()
+  {
+    lista.getStore().clearMarked(void 0)
+  }  
+        
+  function filterTodo(e)
+  {
+    lista.query(e.target.value)
+  }  
+                
