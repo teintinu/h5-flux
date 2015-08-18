@@ -47,14 +47,14 @@ export declare enum ActionStep {
     notify = 1,
 }
 export declare function defineAction<STATE, PAYLOAD>(action: ActionDefinition<STATE, PAYLOAD>): ActionDefined<STATE, PAYLOAD>;
-export interface StoreRef extends Reference {
-}
-export interface StoreOfState<STATE> extends StoreRef {
+export interface QueryOfState<STATE> extends Reference {
     getState(): STATE;
     changed: {
         on: EventToggle<STATE>;
         off: EventToggle<STATE>;
     };
+}
+export interface StoreOfState<STATE> extends QueryOfState<STATE> {
 }
 export declare function defineQuery<STATE, T extends Reference, REDUCED>(reduce: (item: STATE, query_string: string) => REDUCED): Disposable<{
     getStore: () => StoreOfState<STATE>;

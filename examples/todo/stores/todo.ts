@@ -9,16 +9,24 @@ import {ClearMarked} from "../actions/clear_marked";
 import {TodoListData, TodoItemData} from "../data/todo";
 import {todolist_was_changed} from "../events/todo";
 
-debugger
+var show = defineQuery(
+    (state: TodoListData, query: string) => {
+        if (query == 'marked')
+            return state.filter((item) => item.marked);
+        if (query == 'unmarked')
+            return state.filter((item) => !item.marked);
+        return state;
+    }
+);
 
-var show =  defineQuery(
-  (state: TodoListData, query: string)=>{
-     if (query=='marked')
-         return state.filter((item) => item.marked);
-     if (query=='unmarked')
-         return state.filter((item) => !item.marked);
-    return state;
-  }
+var count_markeds = defineQuery(
+    (todos: TodoListData, query: string) => {
+        return todos.reduce(function(ant, item) {
+            if (item.marked)
+                ant++;
+            return ant;
+        }, 0)
+    }
 );
 
 export var TodoStore = defineStore(TodoListSampleData,
@@ -35,6 +43,9 @@ export var TodoStore = defineStore(TodoListSampleData,
         todolist_was_changed
     ],
     {
-        show
+        /** filter todos by all, marked or unmarked */
+        show,
+        /** count markeds */
+        count_markeds
     }
 )

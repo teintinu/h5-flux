@@ -161,13 +161,27 @@ describe('stores', () => {
         });
     });
 
-    it('filterTodo', (done) => {
+    it('filterTodo - all', (done) => {
+
+        var cont = 0;
+        var show_query = TodoStore.query.show.addRef();
+        show_query.changed.on((todos_filtered) => {
+                expect(todos_filtered.length, 'len').to.equal(TodoListSampleData.length);
+                expect(todos_filtered[0], 'todos[0]').to.deep.equal(TodoListSampleData[0]);
+                expect(todos_filtered[1], 'todos[1]').to.deep.equal(TodoListSampleData[1]);
+                expect(todos_filtered[2], 'todos[2]').to.deep.equal(TodoListSampleData[2]);
+                show_query.releaseRef();
+                done();
+        });
+    });
+
+    it('filterTodo - unmarked', (done) => {
 
         var cont = 0;
         var show_query = TodoStore.query.show.addRef();
         show_query.query('unmarked')
         show_query.changed.on((todos_filtered) => {
-                expect(todos_filtered.length, 'len-2').to.equal(TodoListSampleData.length - 1);
+                expect(todos_filtered.length, 'len').to.equal(TodoListSampleData.length - 1);
                 expect(todos_filtered[0], 'todos[0]').to.deep.equal(TodoListSampleData[0]);
                 expect(todos_filtered[1], 'todos[2]').to.deep.equal(TodoListSampleData[2]);
                 show_query.releaseRef();
@@ -175,5 +189,14 @@ describe('stores', () => {
         });
     });
 
+    it('filterTodo - markeds', (done) => {
 
+        var cont = 0;
+        var marked_count_query = TodoStore.query.count_markeds.addRef();
+        marked_count_query.changed.on((marked_count) => {
+                expect(1).to.equal(marked_count);
+                marked_count_query.releaseRef();
+                done();
+        });
+    });
 });

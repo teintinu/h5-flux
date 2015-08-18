@@ -249,15 +249,15 @@ export function defineAction<STATE, PAYLOAD>(action: ActionDefinition<STATE, PAY
 
 }
 
-export interface StoreRef extends Reference {
-}
-
-export interface StoreOfState<STATE> extends StoreRef {
+export interface QueryOfState<STATE> extends Reference {
     getState(): STATE;
     changed: {
         on: EventToggle<STATE>,
         off: EventToggle<STATE>,
     }
+}
+
+export interface StoreOfState<STATE> extends QueryOfState<STATE> {
 }
 
 export function defineQuery<STATE, T extends Reference, REDUCED>(reduce: (item: STATE, query_string: string) => REDUCED) {
@@ -267,14 +267,14 @@ export function defineQuery<STATE, T extends Reference, REDUCED>(reduce: (item: 
         var _state: REDUCED;
         var _query_string: string;
         var listenners: EventListener<REDUCED>[] = [];
-        var must_reduce_it = true;
-        return {
+        var _query={
             instance: createInstance(),
             destructor
         }
+        reduce_it();
+        return _query;
         function createInstance() {
             _storeref.changed.on(changed);
-            reduce_it();
             var inst = {
                 getStore: () => _storeref,
                 getState: () => _state,
@@ -309,16 +309,17 @@ export function defineQuery<STATE, T extends Reference, REDUCED>(reduce: (item: 
         function changed(newState: STATE) {
             reduce_it();
         }
+        var reduce_it_ignore : boolean;
         function reduce_it() {
             asap(() => {
-                if (must_reduce_it) {
-                    _state = reduce(_storeref.getState(), _query_string);
-                    listenners.forEach((l) => asap(() => l(_state)))
-                    must_reduce_it = false;
-                    asap(() => {
-                      must_reduce_it = true;
-                    });
-                }
+              if (!reduce_it_ignore) {
+                reduce_it_ignore=true
+                _state = reduce(_storeref.getState(), _query_string);
+                listenners.forEach((l) => asap(() => l(_state)))
+                asap(() => {
+                  reduce_it_ignore=false;
+                });
+              }
             })
         }
     });
