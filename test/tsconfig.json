@@ -25,13 +25,16 @@
         "../examples/todo/actions/mark_todo.ts",
         "../examples/todo/data/todo.ts",
         "../examples/todo/events/todo.ts",
+        "../examples/todo/index.ts",
         "../examples/todo/schema/todoitem.ts",
         "../examples/todo/stores/todo.ts",
+        "../examples/todo/views/newtodo.ts",
         "./asap.ts",
         "./cases/sum.ts",
         "./h5actions.ts",
         "./h5disposable.ts",
         "./h5events.ts",
-        "./h5stores.ts"
+        "./h5stores.ts",
+        "./jade2ts.ts"
     ]
 }

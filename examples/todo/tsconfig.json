@@ -19,6 +19,7 @@
         "../../lib/h5flux.d.ts",
         "../../typings/chai/chai.d.ts",
         "../../typings/mocha/mocha.d.ts",
+        "../../typings/node/node.d.ts",
         "../../typings/react/react.d.ts",
         "../../typings/tsd.d.ts",
         "./actions/add_todo.ts",
@@ -33,6 +34,6 @@
         "./index.ts",
         "./schema/todoitem.ts",
         "./stores/todo.ts",
-        "./views/footer.tsx"
+        "./views/newtodo.ts"
     ]
 }

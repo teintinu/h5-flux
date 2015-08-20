@@ -1,6 +1,6 @@
 {
   "name": "h5-flux",
-  "version": "0.0.0",
+  "version": "0.0.2",
   "description": "",
   "main": "lib/h5-flux.js",
   "directories": {
@@ -8,10 +8,10 @@
     "test": "test"
   },
   "dependencies": {
-    "chai": "^3.2.0"
   },
   "devDependencies": {
     "chai": "^3.2.0",
+    "jaect": "^0.5.4",
     "mocha": "^2.2.5"
   },
   "scripts": {
@@ -31,9 +31,13 @@
   },
   "homepage": "https://github.com/thr0w/h5-flux",
   "config": {
-      "blanket": {
-        "pattern": [ "" ],
-        "data-cover-never": [ "node_modules" ]
-      }
+    "blanket": {
+      "pattern": [
+        ""
+      ],
+      "data-cover-never": [
+        "node_modules"
+      ]
     }
+  }
 }
