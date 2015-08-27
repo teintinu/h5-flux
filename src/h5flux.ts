@@ -1,6 +1,4 @@
 
-import React = require("react");
-
 var _leaks = 0;
 
 export function leaks() {
@@ -29,6 +27,18 @@ export function asap(fn: () => void) {
         process.nextTick(fn);
     else
         setTimeout(fn, 0)
+}
+
+export function immutableSet<T extends Object>(source: T, props: Object): T
+{
+   var result: any = {};
+   Object.keys(source).forEach(prop=>{
+     result[prop] = source[prop]
+   })
+   Object.keys(props).forEach(prop=>{
+     result[prop] = props[prop]
+   })
+   return <T>result;
 }
 
 export function defineEvent<PAYLOAD>(name: string): Event<PAYLOAD> {
@@ -249,7 +259,10 @@ export function defineAction<STATE, PAYLOAD>(action: ActionDefinition<STATE, PAY
 
 }
 
-export interface QueryOfState<STATE> extends Reference {
+export interface GenericQuery extends Reference {
+}
+
+export interface QueryOfState<STATE> extends GenericQuery {
     getState(): STATE;
     changed: {
         on: EventToggle<STATE>,
@@ -257,7 +270,10 @@ export interface QueryOfState<STATE> extends Reference {
     }
 }
 
-export interface StoreOfState<STATE> extends QueryOfState<STATE> {
+export interface GenericStore extends Reference {
+}
+
+export interface StoreOfState<STATE> extends QueryOfState<STATE>, GenericStore {
 }
 
 export function defineQuery<STATE, T extends Reference, REDUCED>(reduce: (item: STATE, query_string: string) => REDUCED) {
@@ -377,7 +393,7 @@ export function defineStore<STATE, T extends Reference, ACTIONS extends Object, 
 
     if (queries)
         Object.keys(queries).forEach((q) => {
-            queries[(q as any)].set_store(store);
+            (queries[q as string] as any).set_store(store);
         });
     type STORE_WITH_QUERIES = typeof store & { query: typeof queries };
 
@@ -386,105 +402,105 @@ export function defineStore<STATE, T extends Reference, ACTIONS extends Object, 
     return store as STORE_WITH_QUERIES;
 }
 
-export function declareView<STATE extends Object, PROPS extends Object, PRIVATE_METHODS extends Object, PUBLIC_METHODS extends Object>(
-    getPropDefaults: () => PROPS,
-    getInitialState: () => STATE,
-    public_obj: (view: STATE & PROPS & { setState: (view: STATE) => void }) => PUBLIC_METHODS,
-    private_obj: (view: STATE & PROPS & PUBLIC_METHODS& { setState: (view: STATE) => void }) => PRIVATE_METHODS,
-    render: (view: STATE & PROPS & PRIVATE_METHODS & PUBLIC_METHODS) => JSX.Element
-) {
-
-    var component = {
-        componentWillMount: function() {
-            create_view_instance(this);
-        },
-        componentWillUnmount: function() {
-            release_view_instance(this);
-        },
-        render: function(): JSX.Element {
-            return render(getViewState(this));
-        }
-    };
-
-    type VIEW_TYPE = STATE & PROPS & PRIVATE_METHODS & PUBLIC_METHODS &  { setState: (view: STATE) => void };
-
-    var clazz = React.createClass<PROPS, any>(component);
-    return clazz;// as ((typeof clazz) | PUBLIC_METHODS);
-
-    function getViewState(self: any) {
-        var view = self.view as any;
-        (self.view_stores as InternalStore[]).forEach(
-            i=> view[i.name] = i.ref.getState()
-        );
-        return Object.freeze<VIEW_TYPE>(view);
-    }
-
-    function create_view_instance(self: any) {
-        var stores: InternalStore[] = [];
-        var view: InternalPair[] = [];
-        var references: any[] = []
-        var keys = Object.keys(this.props);
-        if (getInitialState)
-            process_obj(getInitialState());
-        process_obj(self.props, getPropDefaults);
-        if (private_obj)
-            process_method(private_obj(view as any as VIEW_TYPE));
-        if (public_obj)
-            process_method(public_obj(view as any as VIEW_TYPE));
-
-        self.stores = stores;
-        self.view = view;
-        self.references = references;
-
-        function process_obj(obj: any, defaults_fn?: any) {
-            if (obj) {
-                var defaults_vals: any;
-                Object.keys(obj).forEach((n) => {
-                    var m = obj[n];
-                    if (m && defaults_vals[n] && defaults_vals[n].releaseRef)
-                        defaults_vals[n].releaseRef();
-                    if (!m && defaults_fn) {
-                        if (!defaults_vals)
-                            defaults_vals = defaults_fn();
-                        m = defaults_vals[n];
-                    }
-                    if (m.releaseRef())
-                        references.push(m);
-                    if (m.getState)
-                        stores.push(m);
-                    else
-                        view[<any>n] = m;
-                });
-            }
-        }
-
-        function process_method(methods: any) {
-            if (methods)
-                Object.keys(methods).forEach((n) => {
-                    var m = methods[n];
-                    (<any>view)[n] = function() {
-                        m.apply(view, arguments)
-                    }
-                });
-        }
-    }
-    function release_view_instance(self: any) {
-        self.references.forEach((r: any) => {
-            if (r && r.releaseRef)
-                r.releaseRef();
-        });
-    }
-    interface InternalPair {
-        name: string;
-        value: any
-    }
-
-    interface InternalStore {
-        name: string;
-        ref: StoreOfState<any>
-    }
-
-}
+// export function declareView<STATE extends Object, PROPS extends Object, PRIVATE_METHODS extends Object, PUBLIC_METHODS extends Object>(
+//     getPropDefaults: () => PROPS,
+//     getInitialState: () => STATE,
+//     public_obj: (view: STATE & PROPS & { setState: (view: STATE) => void }) => PUBLIC_METHODS,
+//     private_obj: (view: STATE & PROPS & PUBLIC_METHODS& { setState: (view: STATE) => void }) => PRIVATE_METHODS,
+//     render: (view: STATE & PROPS & PRIVATE_METHODS & PUBLIC_METHODS) => JSX.Element
+// ) {
+//
+//     var component = {
+//         componentWillMount: function() {
+//             create_view_instance(this);
+//         },
+//         componentWillUnmount: function() {
+//             release_view_instance(this);
+//         },
+//         render: function(): JSX.Element {
+//             return render(getViewState(this));
+//         }
+//     };
+//
+//     type VIEW_TYPE = STATE & PROPS & PRIVATE_METHODS & PUBLIC_METHODS &  { setState: (view: STATE) => void };
+//
+//     var clazz = React.createClass<PROPS, any>(component);
+//     return clazz;// as ((typeof clazz) | PUBLIC_METHODS);
+//
+//     function getViewState(self: any) {
+//         var view = self.view as any;
+//         (self.view_stores as InternalStore[]).forEach(
+//             i=> view[i.name] = i.ref.getState()
+//         );
+//         return Object.freeze<VIEW_TYPE>(view);
+//     }
+//
+//     function create_view_instance(self: any) {
+//         var stores: InternalStore[] = [];
+//         var view: InternalPair[] = [];
+//         var references: any[] = []
+//         var keys = Object.keys(this.props);
+//         if (getInitialState)
+//             process_obj(getInitialState());
+//         process_obj(self.props, getPropDefaults);
+//         if (private_obj)
+//             process_method(private_obj(view as any as VIEW_TYPE));
+//         if (public_obj)
+//             process_method(public_obj(view as any as VIEW_TYPE));
+//
+//         self.stores = stores;
+//         self.view = view;
+//         self.references = references;
+//
+//         function process_obj(obj: any, defaults_fn?: any) {
+//             if (obj) {
+//                 var defaults_vals: any;
+//                 Object.keys(obj).forEach((n) => {
+//                     var m = obj[n];
+//                     if (m && defaults_vals[n] && defaults_vals[n].releaseRef)
+//                         defaults_vals[n].releaseRef();
+//                     if (!m && defaults_fn) {
+//                         if (!defaults_vals)
+//                             defaults_vals = defaults_fn();
+//                         m = defaults_vals[n];
+//                     }
+//                     if (m.releaseRef())
+//                         references.push(m);
+//                     if (m.getState)
+//                         stores.push(m);
+//                     else
+//                         view[<any>n] = m;
+//                 });
+//             }
+//         }
+//
+//         function process_method(methods: any) {
+//             if (methods)
+//                 Object.keys(methods).forEach((n) => {
+//                     var m = methods[n];
+//                     (<any>view)[n] = function() {
+//                         m.apply(view, arguments)
+//                     }
+//                 });
+//         }
+//     }
+//     function release_view_instance(self: any) {
+//         self.references.forEach((r: any) => {
+//             if (r && r.releaseRef)
+//                 r.releaseRef();
+//         });
+//     }
+//     interface InternalPair {
+//         name: string;
+//         value: any
+//     }
+//
+//     interface InternalStore {
+//         name: string;
+//         ref: StoreOfState<any>
+//     }
+//
+// }
 
 export type I18N = string;
 export type Validation<T> = (value: T) => I18N;

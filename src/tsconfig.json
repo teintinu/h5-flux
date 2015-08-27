@@ -9,8 +9,6 @@
         "outDir": "../lib/",
         "sourceMap": true
     },
-    "buildOnSave": true,
-    "compileOnSave": true,
     "filesGlob": [
         "../typings/react/react.d.ts",
         "./**/*.ts"
