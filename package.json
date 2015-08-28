@@ -1,6 +1,6 @@
 {
   "name": "h5-flux",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "",
   "main": "lib/h5-flux.js",
   "directories": {
