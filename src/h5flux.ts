@@ -11,7 +11,7 @@ export type EventEmmiter<PAYLOAD> = (payload: PAYLOAD) => void;
 export type EventListener<PAYLOAD> = (payload: PAYLOAD) => void;
 
 export type EventToggle<PAYLOAD> = (callback: EventListener<PAYLOAD>) => void;
- 
+
 export interface Event<PAYLOAD> {
     name: string;
     emit: EventEmmiter<PAYLOAD>;
@@ -29,16 +29,15 @@ export function asap(fn: () => void) {
         setTimeout(fn, 0)
 }
 
-export function immutableSet<T extends Object>(source: T, props: Object): T
-{
-   var result: any = {};
-   Object.keys(source).forEach(prop=>{
-     result[prop] = source[prop]
-   })
-   Object.keys(props).forEach(prop=>{
-     result[prop] = props[prop]
-   })
-   return <T>result;
+export function immutableSet<T extends Object>(source: T, props: Object): T {
+    var result: any = {};
+    Object.keys(source).forEach(prop=> {
+        result[prop] = source[prop]
+    })
+    Object.keys(props).forEach(prop=> {
+        result[prop] = props[prop]
+    })
+    return <T>result;
 }
 
 export function defineEvent<PAYLOAD>(name: string): Event<PAYLOAD> {
@@ -184,32 +183,31 @@ export function defineDisposable<T extends Reference, CHILDREN extends Disposabl
 }
 
 export interface ActionDelegation {
-  state: number,
-  fn?: (state: any)=>void
+    state: number,
+    fn?: (state: any) => void
 };
 
-export function delegateActionTo<STATE, PAYLOAD>(action: ActionDefined<STATE, PAYLOAD>, payload: PAYLOAD): ActionDelegation
-{
-  return {
-    state: 1,
-    fn: function(state: STATE){
-      var ref=action.addRef();
-      ref.dispatch(state, payload);
-      ref.releaseRef();
+export function delegateActionTo<STATE, PAYLOAD>(action: ActionDefined<STATE, PAYLOAD>, payload: PAYLOAD): ActionDelegation {
+    return {
+        state: 1,
+        fn: function(state: STATE) {
+            var ref = action.addRef();
+            ref.dispatch(state, payload);
+            ref.releaseRef();
+        }
     }
-  }
 }
 
-export function delegateActionToMySelf(){
-  return {
-    state: 2
-  }
+export function delegateActionToMySelf() {
+    return {
+        state: 2
+    }
 }
 
-export function delegateActionToNone(){
-  return {
-    state: 3
-  }
+export function delegateActionToNone() {
+    return {
+        state: 3
+    }
 }
 
 export interface ActionDefinition<STATE, PAYLOAD> {
@@ -250,10 +248,10 @@ export function defineAction<STATE, PAYLOAD>(action: ActionDefinition<STATE, PAY
 
     function createInstance(): DisposableCreatorReturn<ActionReference<STATE, PAYLOAD>> {
 
-        var emit: (state: STATE, payload: PAYLOAD)=>void;
-        if (action.delegate) emit=emit_delegate;
-        else if (action.reduce) emit=emit_reduce;
-        else throw new Error("Action "+action.name+"can't be emitted");
+        var emit: (state: STATE, payload: PAYLOAD) => void;
+        if (action.delegate) emit = emit_delegate;
+        else if (action.reduce) emit = emit_reduce;
+        else throw new Error("Action " + action.name + "can't be emitted");
 
         var action_event = defineEvent<EV_PAYLOAD>(action.name);
 
@@ -290,12 +288,11 @@ export function defineAction<STATE, PAYLOAD>(action: ActionDefinition<STATE, PAY
 
         function run_delegate(state: STATE, payload: PAYLOAD) {
             var del = action.delegate(state, payload);
-            if (del.state===1)
-            {
-              del.fn(state);
+            if (del.state === 1) {
+                del.fn(state);
             }
-            else if (del.state==2) {
-              emit_reduce(state, payload);
+            else if (del.state == 2) {
+                emit_reduce(state, payload);
             }
         }
 
@@ -337,7 +334,7 @@ export function defineQuery<STATE, T extends Reference, REDUCED, QUERY_TYPE>(red
         var _state: REDUCED;
         var _query_obj: QUERY_TYPE;
         var listenners: EventListener<REDUCED>[] = [];
-        var _query={
+        var _query = {
             instance: createInstance(),
             destructor
         }
@@ -379,17 +376,17 @@ export function defineQuery<STATE, T extends Reference, REDUCED, QUERY_TYPE>(red
         function changed(newState: STATE) {
             reduce_it();
         }
-        var reduce_it_ignore : boolean;
+        var reduce_it_ignore: boolean;
         function reduce_it() {
             asap(() => {
-              if (!reduce_it_ignore) {
-                reduce_it_ignore=true
-                _state = reduce(_storeref.getState(), _query_obj);
-                listenners.forEach((l) => asap(() => l(_state)))
-                asap(() => {
-                  reduce_it_ignore=false;
-                });
-              }
+                if (!reduce_it_ignore) {
+                    reduce_it_ignore = true
+                    _state = reduce(_storeref.getState(), _query_obj);
+                    listenners.forEach((l) => asap(() => l(_state)))
+                    asap(() => {
+                        reduce_it_ignore = false;
+                    });
+                }
             })
         }
     });
@@ -397,37 +394,46 @@ export function defineQuery<STATE, T extends Reference, REDUCED, QUERY_TYPE>(red
     return qry;
 }
 
-export function defineStore<STATE, T extends Reference, ACTIONS extends Object, QUERIES extends Object>(
-    initialState: STATE, actions: () => ACTIONS, catches: Event<STATE>[], queries?: QUERIES) {
+export function defineStore<STATE, T extends Reference, ACTIONS extends Object, QUERIES extends Object, FUNCTIONS extends Object>(
+  definition: {
+    initialState: STATE,
+    actions: () => ACTIONS,
+    catches: Event<STATE>[],
+    queries?: QUERIES,
+    functions?: FUNCTIONS
+}) {
     var store = defineDisposable(null, (c: DisposableChildren) => {
-        var state: STATE = initialState;
+        var state: STATE = definition.initialState;
         var listenners: EventListener<STATE>[] = [];
         var registered_actions: Reference[] = [];
         var instance = createInstance();
-        catches.forEach((e) => e.on(changed));
+        definition.catches.forEach((e) => e.on(changed));
         return {
             instance,
             destructor
         }
         function createInstance() {
             var inst: any = {};
-            var actions_created = actions();
+            var actions_created = definition.actions();
             Object.keys(actions_created).forEach(
                 (key: string) => {
                     var ref = (<any>actions_created)[key].addRef() as ActionReference<STATE, any>;
                     registered_actions.push(ref);
                     inst[key] = (payload: any) => ref.dispatch(state, payload)
                 });
-            type INSTANCE = StoreOfState<STATE> & ACTIONS;
+            type INSTANCE = StoreOfState<STATE> & ACTIONS &
+              {functions: (typeof definition.functions) };
+
             (<INSTANCE>inst).getState = () => state;
             (<INSTANCE>inst).changed = {
                 on: add_listenner,
                 off: remove_listenner,
             }
+            inst.functions = definition.functions;
             return <INSTANCE>inst;
         }
         function destructor() {
-            catches.forEach((e) => e.off(changed));
+            definition.catches.forEach((e) => e.off(changed));
             registered_actions.forEach((a) => a.releaseRef());
         }
         function add_listenner(l: EventListener<STATE>) {
@@ -445,13 +451,16 @@ export function defineStore<STATE, T extends Reference, ACTIONS extends Object, 
         }
     });
 
-    if (queries)
-        Object.keys(queries).forEach((q) => {
-            (queries[q as string] as any).set_store(store);
+    if (definition.queries)
+        Object.keys(definition.queries).forEach((q) => {
+            (definition.queries[q as string] as any).set_store(store);
         });
-    type STORE_WITH_QUERIES = typeof store & { query: typeof queries };
 
-    (store as STORE_WITH_QUERIES).query = queries;
+    type STORE_WITH_QUERIES =
+      typeof store &
+      { query: typeof definition.queries };
+
+    (store as STORE_WITH_QUERIES).query = definition.queries;
 
     return store as STORE_WITH_QUERIES;
 }

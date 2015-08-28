@@ -1,9 +1,7 @@
-declare module "h5flux"
-{
-export function leaks(): number;
-export type EventEmmiter<PAYLOAD> = (payload: PAYLOAD) => void;
-export type EventListener<PAYLOAD> = (payload: PAYLOAD) => void;
-export type EventToggle<PAYLOAD> = (callback: EventListener<PAYLOAD>) => void;
+export declare function leaks(): number;
+export declare type EventEmmiter<PAYLOAD> = (payload: PAYLOAD) => void;
+export declare type EventListener<PAYLOAD> = (payload: PAYLOAD) => void;
+export declare type EventToggle<PAYLOAD> = (callback: EventListener<PAYLOAD>) => void;
 export interface Event<PAYLOAD> {
     name: string;
     emit: EventEmmiter<PAYLOAD>;
@@ -11,9 +9,9 @@ export interface Event<PAYLOAD> {
     once: EventToggle<PAYLOAD>;
     off: EventToggle<PAYLOAD>;
 }
-export function asap(fn: () => void): void;
-export function immutableSet<T extends Object>(source: T, props: Object): T;
-export function defineEvent<PAYLOAD>(name: string): Event<PAYLOAD>;
+export declare function asap(fn: () => void): void;
+export declare function immutableSet<T extends Object>(source: T, props: Object): T;
+export declare function defineEvent<PAYLOAD>(name: string): Event<PAYLOAD>;
 export interface Reference extends Object {
     releaseRef?: () => void;
 }
@@ -29,17 +27,17 @@ export interface DisposableCreatorReturn<T extends Reference> {
 export interface DisposableChildren {
     [name: string]: Reference;
 }
-export type DisposableCreator<T extends Reference, CHILDREN extends DisposableChildren> = (children: CHILDREN) => DisposableCreatorReturn<T>;
-export function defineDisposable<T extends Reference, CHILDREN extends DisposableChildren>(getChildren: () => CHILDREN, creator: DisposableCreator<T, CHILDREN>): Disposable<T>;
+export declare type DisposableCreator<T extends Reference, CHILDREN extends DisposableChildren> = (children: CHILDREN) => DisposableCreatorReturn<T>;
+export declare function defineDisposable<T extends Reference, CHILDREN extends DisposableChildren>(getChildren: () => CHILDREN, creator: DisposableCreator<T, CHILDREN>): Disposable<T>;
 export interface ActionDelegation {
     state: number;
     fn?: (state: any) => void;
 }
-export function delegateActionTo<STATE, PAYLOAD>(action: ActionDefined<STATE, PAYLOAD>, payload: PAYLOAD): ActionDelegation;
-export function delegateActionToMySelf(): {
+export declare function delegateActionTo<STATE, PAYLOAD>(action: ActionDefined<STATE, PAYLOAD>, payload: PAYLOAD): ActionDelegation;
+export declare function delegateActionToMySelf(): {
     state: number;
 };
-export function delegateActionToNone(): {
+export declare function delegateActionToNone(): {
     state: number;
 };
 export interface ActionDefinition<STATE, PAYLOAD> {
@@ -56,12 +54,12 @@ export interface ActionReference<STATE, PAYLOAD> extends ActionRef {
 export interface ActionDefined<STATE, PAYLOAD> extends Disposable<ActionReference<STATE, PAYLOAD>> {
     register: ((payload: PAYLOAD) => void);
 }
-export enum ActionStep {
+export declare enum ActionStep {
     delegate = 0,
     reduce = 1,
     notify = 2,
 }
-export function defineAction<STATE, PAYLOAD>(action: ActionDefinition<STATE, PAYLOAD>): ActionDefined<STATE, PAYLOAD>;
+export declare function defineAction<STATE, PAYLOAD>(action: ActionDefinition<STATE, PAYLOAD>): ActionDefined<STATE, PAYLOAD>;
 export interface GenericQuery extends Reference {
 }
 export interface QueryOfState<STATE> extends GenericQuery {
@@ -75,7 +73,7 @@ export interface GenericStore extends Reference {
 }
 export interface StoreOfState<STATE> extends QueryOfState<STATE>, GenericStore {
 }
-export function defineQuery<STATE, T extends Reference, REDUCED, QUERY_TYPE>(reduce: (item: STATE, query_string: QUERY_TYPE) => REDUCED): Disposable<{
+export declare function defineQuery<STATE, T extends Reference, REDUCED, QUERY_TYPE>(reduce: (item: STATE, query_string: QUERY_TYPE) => REDUCED): Disposable<{
     getStore: () => StoreOfState<STATE>;
     getState: () => REDUCED;
     query: (query_obj: QUERY_TYPE) => void;
@@ -84,12 +82,20 @@ export function defineQuery<STATE, T extends Reference, REDUCED, QUERY_TYPE>(red
         off: (l: (payload: REDUCED) => void) => void;
     };
 } & Reference>;
-export function defineStore<STATE, T extends Reference, ACTIONS extends Object, QUERIES extends Object>(initialState: STATE, actions: () => ACTIONS, catches: Event<STATE>[], queries?: QUERIES): Disposable<StoreOfState<STATE> & ACTIONS> & {
+export declare function defineStore<STATE, T extends Reference, ACTIONS extends Object, QUERIES extends Object, FUNCTIONS extends Object>(definition: {
+    initialState: STATE;
+    actions: () => ACTIONS;
+    catches: Event<STATE>[];
+    queries?: QUERIES;
+    functions?: FUNCTIONS;
+}): Disposable<StoreOfState<STATE> & ACTIONS & {
+    functions: FUNCTIONS;
+}> & {
     query: QUERIES;
 };
-export type I18N = string;
-export type Validation<T> = (value: T) => I18N;
-export enum FieldType {
+export declare type I18N = string;
+export declare type Validation<T> = (value: T) => I18N;
+export declare enum FieldType {
     String = 0,
     Number = 1,
 }
@@ -105,8 +111,7 @@ export interface Field<T> {
     validate(value: T): I18N;
     required: boolean;
 }
-export function defineField<T>(name: string, labels: FieldLabels, fieldType: FieldType, toText: (value: T) => string, fromText: (text: string) => T, required: boolean, validations?: Validation<T>[]): Field<T>;
-export function defineFieldString(name: string, labels: FieldLabels, required: boolean, min?: number, max?: number, validations?: Validation<string>[]): Field<string>;
-export function defineFieldNumber(name: string, labels: FieldLabels, decimals: number, required: boolean, min?: number, max?: number, validations?: Validation<number>[]): Field<number>;
-export function createFieldBoolean(name: string, labels: FieldLabels, required: boolean, validations?: Validation<boolean>[]): Field<boolean>;
-}
+export declare function defineField<T>(name: string, labels: FieldLabels, fieldType: FieldType, toText: (value: T) => string, fromText: (text: string) => T, required: boolean, validations?: Validation<T>[]): Field<T>;
+export declare function defineFieldString(name: string, labels: FieldLabels, required: boolean, min?: number, max?: number, validations?: Validation<string>[]): Field<string>;
+export declare function defineFieldNumber(name: string, labels: FieldLabels, decimals: number, required: boolean, min?: number, max?: number, validations?: Validation<number>[]): Field<number>;
+export declare function createFieldBoolean(name: string, labels: FieldLabels, required: boolean, validations?: Validation<boolean>[]): Field<boolean>;

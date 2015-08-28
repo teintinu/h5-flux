@@ -12,9 +12,10 @@ export var ac_sum = defineAction({
 });
 
 export var SumStore =
-    defineStore(0,
-        ()=>({
+    defineStore({initialState: 0,
+        actions: ()=>({
             sum: ac_sum.register
         }),
-        [ev_sum_result]
+        catches: [ev_sum_result]
+      }
     )

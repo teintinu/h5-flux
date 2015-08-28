@@ -29,23 +29,35 @@ var count_markeds = defineQuery(
     }
 );
 
-export var TodoStore = defineStore(TodoListSampleData,
-    () => ({
-        loadTodos: LoadTodos.register,
-        addTodo: AddTodo.register,
-        deleteTodo: DeleteTodo.register,
-        editTodo: EditTodo.register,
-        markTodo: MarkTodo.register,
-        markAll: MarkAll.register,
-        clearMarked: ClearMarked.register,
-    }),
-    [
-        todolist_was_changed
-    ],
+export var TodoStore = defineStore(
     {
-        /** filter todos by all, marked or unmarked */
-        show,
-        /** count markeds */
-        count_markeds
+        initialState: TodoListSampleData,
+        actions: () => ({
+            loadTodos: LoadTodos.register,
+            addTodo: AddTodo.register,
+            deleteTodo: DeleteTodo.register,
+            editTodo: EditTodo.register,
+            markTodo: MarkTodo.register,
+            markAll: MarkAll.register,
+            clearMarked: ClearMarked.register,
+        }),
+        catches: [
+            todolist_was_changed
+        ],
+        queries: {
+            /** filter todos by all, marked or unmarked */
+            show,
+            /** count markeds */
+            count_markeds
+        },
+        functions: {
+          count_unmarkeds: function(todos: TodoListData){
+              return todos.reduce(function(ant, item) {
+                  if (!item.marked)
+                      ant++;
+                  return ant;
+              }, 0)
+          }
+        }
     }
 )
