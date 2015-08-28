@@ -1,5 +1,5 @@
 
-import {defineAction} from "../../../lib/h5flux";
+import {defineAction, GenericActionDefined} from "../../../lib/h5flux";
 
 import {TodoListData, TodoItemData} from "../data/todo";
 import {todolist_was_changed} from "../events/todo";
@@ -23,3 +23,5 @@ export var AddTodo = defineAction({
         todolist_was_changed
     ]
 })
+
+var x: GenericActionDefined = AddTodo.register;

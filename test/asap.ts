@@ -2,7 +2,7 @@
 /// <reference path="../typings/chai/chai.d.ts" />
 
 import chai = require('chai');
-import {asap, asap_once, leaks} from "../lib/h5flux";
+import {asap, leaks} from "../lib/h5flux";
 
 var expect = chai.expect;
 

@@ -183,9 +183,39 @@ export function defineDisposable<T extends Reference, CHILDREN extends Disposabl
     }
 }
 
+export interface ActionDelegation {
+  state: number,
+  fn?: (state: any)=>void
+};
+
+export function delegateActionTo<STATE, PAYLOAD>(action: ActionDefined<STATE, PAYLOAD>, payload: PAYLOAD): ActionDelegation
+{
+  return {
+    state: 1,
+    fn: function(state: STATE){
+      var ref=action.addRef();
+      ref.dispatch(state, payload);
+      ref.releaseRef();
+    }
+  }
+}
+
+export function delegateActionToMySelf(){
+  return {
+    state: 2
+  }
+}
+
+export function delegateActionToNone(){
+  return {
+    state: 3
+  }
+}
+
 export interface ActionDefinition<STATE, PAYLOAD> {
     name: string;
-    reduce(state: STATE, payload: PAYLOAD): STATE;
+    delegate?(state: STATE, payload: PAYLOAD): ActionDelegation;
+    reduce?(state: STATE, payload: PAYLOAD): STATE;
     notify: Event<STATE>[]
 }
 
@@ -200,7 +230,7 @@ export interface ActionDefined<STATE, PAYLOAD> extends Disposable<ActionReferenc
     register: ((payload: PAYLOAD) => void)
 }
 
-export enum ActionStep { reduce, notify };
+export enum ActionStep { delegate, reduce, notify };
 
 export function defineAction<STATE, PAYLOAD>(action: ActionDefinition<STATE, PAYLOAD>) {
 
@@ -220,17 +250,28 @@ export function defineAction<STATE, PAYLOAD>(action: ActionDefinition<STATE, PAY
 
     function createInstance(): DisposableCreatorReturn<ActionReference<STATE, PAYLOAD>> {
 
+        var emit: (state: STATE, payload: PAYLOAD)=>void;
+        if (action.delegate) emit=emit_delegate;
+        else if (action.reduce) emit=emit_reduce;
+        else throw new Error("Action "+action.name+"can't be emitted");
+
         var action_event = defineEvent<EV_PAYLOAD>(action.name);
 
         action_event.on(catch_action_events);
 
         return {
+
             instance: {
-                dispatch: emit_reduce
+                dispatch: emit
             },
             destructor: () => {
                 action_event.off(catch_action_events);
             }
+        }
+
+        function emit_delegate(state: STATE, payload: PAYLOAD) {
+            var e = { step: ActionStep.delegate, state, payload };
+            action_event.emit(e);
         }
 
         function emit_reduce(state: STATE, payload: PAYLOAD) {
@@ -239,10 +280,23 @@ export function defineAction<STATE, PAYLOAD>(action: ActionDefinition<STATE, PAY
         }
 
         function catch_action_events(e: EV_PAYLOAD): void {
+            if (e.step === ActionStep.delegate)
+                return run_delegate(e.state, e.payload);
             if (e.step === ActionStep.reduce)
                 return run_reduce(e.state, e.payload);
             if (e.step === ActionStep.notify)
                 return do_notify(e.state);
+        }
+
+        function run_delegate(state: STATE, payload: PAYLOAD) {
+            var del = action.delegate(state, payload);
+            if (del.state===1)
+            {
+              del.fn(state);
+            }
+            else if (del.state==2) {
+              emit_reduce(state, payload);
+            }
         }
 
         function run_reduce(state: STATE, payload: PAYLOAD) {

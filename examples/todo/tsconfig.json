@@ -24,6 +24,7 @@
         "../../typings/tsd.d.ts",
         "./actions/add_todo.ts",
         "./actions/clear_marked.ts",
+        "./actions/cmd.ts",
         "./actions/delete_todo.ts",
         "./actions/edit_todo.ts",
         "./actions/load_todos.ts",

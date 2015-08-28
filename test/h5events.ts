@@ -85,6 +85,20 @@ describe('events', () => {
         e.on(fn);
     });
 
+    it('emit/unlisten once', (done) => {
+        var e = defineEvent<number>("e")
+        e.once(fn);
+        e.off(fn);
+
+        setTimeout(function(){
+            done();
+        }, 10);
+
+        function fn(payload: number){
+            expect('event').to.be.eq('not been emitted');
+        }
+    });
+
     it('payload must be an immutable object', (done) => {
         interface Sample {
             value: number,

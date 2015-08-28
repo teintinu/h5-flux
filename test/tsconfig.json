@@ -18,6 +18,7 @@
         "../lib/h5flux.d.ts",
         "../examples/todo/actions/add_todo.ts",
         "../examples/todo/actions/clear_marked.ts",
+        "../examples/todo/actions/cmd.ts",
         "../examples/todo/actions/delete_todo.ts",
         "../examples/todo/actions/edit_todo.ts",
         "../examples/todo/actions/load_todos.ts",

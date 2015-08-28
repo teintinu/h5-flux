@@ -13,6 +13,7 @@ import {EditTodo} from "../examples/todo/actions/edit_todo";
 import {MarkTodo} from "../examples/todo/actions/mark_todo";
 import {MarkAll} from "../examples/todo/actions/mark_all";
 import {ClearMarked} from "../examples/todo/actions/clear_marked";
+import {TodoCMD} from "../examples/todo/actions/cmd";
 
 var expect = chai.expect;
 
@@ -151,5 +152,42 @@ describe('actions', () => {
             ref.releaseRef();
             done();
         });
+    });
+
+    it('delegate to addTodo', (done) => {
+        var ref = TodoCMD.addRef();
+        ref.dispatch([], {cmd: 'add', val: 'todo 1'});
+        todolist_was_changed.once((todos) => {
+            expect(todos.length).to.equal(1);
+            expect(todos[0].text).to.equal("todo 1");
+            expect(todos[0].marked).to.false;
+            ref.releaseRef();
+            done();
+        });
+    });
+
+    it('delegate to self', (done) => {
+        var ref = TodoCMD.addRef();
+        ref.dispatch([TodoListSampleData], {cmd: 'drop-all'});
+        todolist_was_changed.once((todos) => {
+            expect(todos.length).to.equal(0);
+            ref.releaseRef();
+            done();
+        });
+    });
+
+    it('delegate to none', (done) => {
+        var ref = TodoCMD.addRef();
+        ref.dispatch([TodoListSampleData], {cmd: 'xxxx'});
+        todolist_was_changed.once(fn);
+        setTimeout(function(){
+            ref.releaseRef();
+            todolist_was_changed.off(fn);
+            done();
+        }, 10);
+
+        function fn(todos: TodoListData){
+            expect('todolist_was_changed').to.be.eq('not been emitted');
+        }
     });
 });
