@@ -75,10 +75,10 @@ export interface GenericStore extends Reference {
 }
 export interface StoreOfState<STATE> extends QueryOfState<STATE>, GenericStore {
 }
-export function defineQuery<STATE, T extends Reference, REDUCED>(reduce: (item: STATE, query_string: string) => REDUCED): Disposable<{
+export function defineQuery<STATE, T extends Reference, REDUCED, QUERY_TYPE>(reduce: (item: STATE, query_string: QUERY_TYPE) => REDUCED): Disposable<{
     getStore: () => StoreOfState<STATE>;
     getState: () => REDUCED;
-    query: (query_string: string) => void;
+    query: (query_obj: QUERY_TYPE) => void;
     changed: {
         on: (l: (payload: REDUCED) => void) => void;
         off: (l: (payload: REDUCED) => void) => void;
@@ -109,5 +109,4 @@ export function defineField<T>(name: string, labels: FieldLabels, fieldType: Fie
 export function defineFieldString(name: string, labels: FieldLabels, required: boolean, min?: number, max?: number, validations?: Validation<string>[]): Field<string>;
 export function defineFieldNumber(name: string, labels: FieldLabels, decimals: number, required: boolean, min?: number, max?: number, validations?: Validation<number>[]): Field<number>;
 export function createFieldBoolean(name: string, labels: FieldLabels, required: boolean, validations?: Validation<boolean>[]): Field<boolean>;
-
 }

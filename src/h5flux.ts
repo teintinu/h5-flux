@@ -11,7 +11,7 @@ export type EventEmmiter<PAYLOAD> = (payload: PAYLOAD) => void;
 export type EventListener<PAYLOAD> = (payload: PAYLOAD) => void;
 
 export type EventToggle<PAYLOAD> = (callback: EventListener<PAYLOAD>) => void;
-
+ 
 export interface Event<PAYLOAD> {
     name: string;
     emit: EventEmmiter<PAYLOAD>;
@@ -330,12 +330,12 @@ export interface GenericStore extends Reference {
 export interface StoreOfState<STATE> extends QueryOfState<STATE>, GenericStore {
 }
 
-export function defineQuery<STATE, T extends Reference, REDUCED>(reduce: (item: STATE, query_string: string) => REDUCED) {
+export function defineQuery<STATE, T extends Reference, REDUCED, QUERY_TYPE>(reduce: (item: STATE, query_string: QUERY_TYPE) => REDUCED) {
     var store: Disposable<StoreOfState<STATE>>;
     var qry = defineDisposable(null, (c: DisposableChildren) => {
         var _storeref = store.addRef();
         var _state: REDUCED;
-        var _query_string: string;
+        var _query_obj: QUERY_TYPE;
         var listenners: EventListener<REDUCED>[] = [];
         var _query={
             instance: createInstance(),
@@ -348,9 +348,9 @@ export function defineQuery<STATE, T extends Reference, REDUCED>(reduce: (item: 
             var inst = {
                 getStore: () => _storeref,
                 getState: () => _state,
-                query: (query_string: string) => {
-                    if (_query_string != query_string) {
-                        _query_string = query_string
+                query: (query_obj: QUERY_TYPE) => {
+                    if (_query_obj != query_obj) {
+                        _query_obj = query_obj
                         reduce_it();
                     }
                 },
@@ -384,7 +384,7 @@ export function defineQuery<STATE, T extends Reference, REDUCED>(reduce: (item: 
             asap(() => {
               if (!reduce_it_ignore) {
                 reduce_it_ignore=true
-                _state = reduce(_storeref.getState(), _query_string);
+                _state = reduce(_storeref.getState(), _query_obj);
                 listenners.forEach((l) => asap(() => l(_state)))
                 asap(() => {
                   reduce_it_ignore=false;
